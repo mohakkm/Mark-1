@@ -15,12 +15,12 @@ RULE FOR EVERY AI AGENT / SESSION (Cursor, Antigravity, VSCode/Copilot, whoever)
 ---
 
 ## Phase 1 — Project Setup
-- [ ] Create repo, single git remote (used across all platforms/sessions)
-- [ ] Next.js + TypeScript + TailwindCSS scaffold
-- [ ] Supabase project created
-- [ ] Supabase Auth wired (single user for now — no multi-tenant RLS yet)
-- [ ] Env vars (.env.local) documented in `docs/architecture.md`
-- [ ] Database schema created (see `docs/database.md`)
+- [x] Create repo, single git remote (used across all platforms/sessions)
+- [x] Next.js + TypeScript + TailwindCSS scaffold
+- [ ] Supabase project created *(founder action — see docs/state.md)*
+- [x] Supabase Auth wired (single user for now — no multi-tenant RLS yet)
+- [x] Env vars (.env.local) documented in `docs/architecture.md` + `.env.local.example`
+- [x] Database schema created (see `docs/database.md`) — SQL at `supabase/migrations/001_initial_schema.sql`; apply in Supabase dashboard
 
 ---
 
