@@ -61,6 +61,8 @@ No browser extension. No headless browser. No third-party scraping API.
 
 - `POST /api/ideas` — create idea
 - `GET /api/ideas` — list ideas
+- `GET /api/ideas/:id` — get single idea (for edit form)
+- `PATCH /api/ideas/:id` — update idea
 - `POST /api/leads` — accepts raw pasted profile text + idea_id, returns
   structured lead after Groq call, saves to DB
 - `GET /api/leads?idea_id=` — list leads for an idea
