@@ -2,21 +2,31 @@
 
 import { useState } from "react";
 import type { Idea } from "@/types/idea";
+import type { Lead } from "@/types/lead";
 import { IdeaSwitcher } from "@/components/idea-switcher";
 import { IdeaDetailsCard } from "@/components/idea-details-card";
 import { IdeaModal } from "@/components/idea-modal";
 import { IdeasManagerModal } from "@/components/ideas-manager-modal";
-import { LogOut, Sparkles, Target, MessageSquare, BarChart3 } from "lucide-react";
+import { AddLeadModal } from "@/components/add-lead-modal";
+import { LeadsList } from "@/components/leads-list";
+import { LogOut } from "lucide-react";
 
 interface DashboardViewProps {
   userEmail: string;
   ideas: Idea[];
   selectedIdeaId: string | null;
+  leads: Lead[];
 }
 
-export function DashboardView({ userEmail, ideas, selectedIdeaId }: DashboardViewProps) {
+export function DashboardView({
+  userEmail,
+  ideas,
+  selectedIdeaId,
+  leads,
+}: DashboardViewProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+  const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false);
   const [ideaToEdit, setIdeaToEdit] = useState<Idea | null>(null);
 
   const selectedIdea = ideas.find((i) => i.id === selectedIdeaId) ?? ideas[0] ?? null;
@@ -84,78 +94,15 @@ export function DashboardView({ userEmail, ideas, selectedIdeaId }: DashboardVie
           />
         </section>
 
-        {/* Scoped Scope Status Card for Phase 2 / Phase 3 Transition */}
+        {/* Leads List Section */}
         {selectedIdea && (
           <section className="space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
-              <div>
-                <h3 className="text-lg font-bold text-zinc-900">
-                  Validation Outreach for &quot;{selectedIdea.name}&quot;
-                </h3>
-                <p className="text-xs text-zinc-500">
-                  Leads and insights in upcoming phases will be scoped strictly to this idea.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-xs">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                    <Target className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                      Phase 3: Leads
-                    </div>
-                    <div className="text-sm font-semibold text-zinc-900 mt-0.5">
-                      Pasted LinkedIn Profiles
-                    </div>
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 mt-3 leading-relaxed">
-                  Extract structured Lead records (name, company, headline) using Groq AI.
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-xs">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
-                    <MessageSquare className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                      Phase 4: Outreach
-                    </div>
-                    <div className="text-sm font-semibold text-zinc-900 mt-0.5">
-                      AI Message Drafting
-                    </div>
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 mt-3 leading-relaxed">
-                  Tailored first touch outreach messages tailored to target customer persona.
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-xs">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-                    <BarChart3 className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                      Phase 5 & 6: Signals
-                    </div>
-                    <div className="text-sm font-semibold text-zinc-900 mt-0.5">
-                      Validation Verdict
-                    </div>
-                  </div>
-                </div>
-                <p className="text-xs text-zinc-500 mt-3 leading-relaxed">
-                  Capture replies, parse pain points/objections, and calculate idea response rate.
-                </p>
-              </div>
-            </div>
+            <LeadsList
+              leads={leads}
+              ideaId={selectedIdea.id}
+              ideaName={selectedIdea.name}
+              onOpenAddModal={() => setIsAddLeadModalOpen(true)}
+            />
           </section>
         )}
       </main>
@@ -175,6 +122,15 @@ export function DashboardView({ userEmail, ideas, selectedIdeaId }: DashboardVie
         onEditIdea={handleOpenEdit}
         onCreateIdea={() => setIsCreateModalOpen(true)}
       />
+
+      {selectedIdea && (
+        <AddLeadModal
+          isOpen={isAddLeadModalOpen}
+          onClose={() => setIsAddLeadModalOpen(false)}
+          ideaId={selectedIdea.id}
+          ideaName={selectedIdea.name}
+        />
+      )}
     </div>
   );
 }

@@ -32,10 +32,10 @@ RULE FOR EVERY AI AGENT / SESSION (Cursor, Antigravity, VSCode/Copilot, whoever)
 ---
 
 ## Phase 3 — Leads (manual paste-in)
-- [ ] "Add Lead" page: single textarea for pasted LinkedIn profile blob
-- [ ] API route: send pasted text to Groq API → structured JSON (name, role, company, headline)
-- [ ] Save structured lead to DB, linked to current idea
-- [ ] Leads table view (list, search, status filter)
+- [x] "Add Lead" UI / Modal: single textarea for pasted LinkedIn profile blob
+- [x] API route: send pasted text to Groq API → structured JSON (name, role, company, headline)
+- [x] Save structured lead to DB, linked to current idea
+- [x] Leads table view (list, search, status filter)
 - [ ] Lead detail page
 
 ---
