@@ -25,9 +25,9 @@ RULE FOR EVERY AI AGENT / SESSION (Cursor, Antigravity, VSCode/Copilot, whoever)
 ---
 
 ## Phase 2 — Ideas
-- [ ] Ideas table + CRUD (create/edit/list ideas)
-- [ ] Idea switcher component (dropdown/filter at top of dashboard)
-- [ ] All lead views scoped to currently selected idea
+- [x] Ideas table + CRUD (create/edit/list ideas)
+- [x] Idea switcher component (dropdown/filter at top of dashboard)
+- [x] All lead views scoped to currently selected idea
 
 ---
 

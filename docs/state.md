@@ -1,6 +1,6 @@
 # Current State (update this every session, before you stop)
 
-Last updated: 2026-07-30 — by: Cursor
+Last updated: 2026-07-30 — by: Antigravity
 
 ## What's currently working
 - Phase 1 verified end-to-end: signup/login, Supabase connected, all four tables live
@@ -8,18 +8,23 @@ Last updated: 2026-07-30 — by: Cursor
 - Supabase Auth: `/login` (sign in / sign up), `/auth/callback`, middleware session guard
 - Database migration applied: `ideas`, `leads`, `conversations`, `insights`
 - Git remote: `https://github.com/mohakkm/Mark-1.git`
+- Phase 2 complete & verified:
+  - Ideas CRUD: `/api/ideas` (GET/POST), `/api/ideas/[id]` (GET/PATCH/DELETE)
+  - Server Actions in `src/app/actions/ideas.ts` (`createIdeaAction`, `updateIdeaAction`, `deleteIdeaAction`, `selectIdea`)
+  - Persistent active idea selection via `selected_idea_id` cookie (`src/lib/selected-idea.ts`)
+  - Modern UI components: `IdeaSwitcher`, `IdeaModal` (create & edit), `IdeasManagerModal` (list/filter/manage), `IdeaDetailsCard`, `DashboardView`
 
 ## What's mid-implementation / half-done
-- Phase 2 in progress: Ideas CRUD + idea switcher
+- None (Phase 2 is fully complete and verified with production build)
 
 ## Known gaps (deferred, not blocking)
 - **Password reset page** — no `/forgot-password` or reset flow yet. Single-user app; founder can recover via Supabase dashboard if needed. Add before any second user.
 
 ## What broke last session and why (so the next agent doesn't repeat it)
-- `create-next-app` fails when run directly in a folder named `Mark-1` (npm naming restriction). Workaround: scaffold into `temp-scaffold/` subfolder, then move files to root and set `"name": "mark-1"` in `package.json`.
+- `FolderGear` icon export in `lucide-react` does not exist; replaced with `FolderCog`.
 
 ## Next concrete step
-- Finish Phase 2: idea switcher scoped to selected idea, then start Phase 3 (Add Lead paste-in)
+- Start Phase 3: Add Lead manual paste-in flow with Groq API structuring.
 
 ---
 
