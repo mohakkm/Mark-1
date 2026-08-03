@@ -48,10 +48,10 @@ RULE FOR EVERY AI AGENT / SESSION (Cursor, Antigravity, VSCode/Copilot, whoever)
 ---
 
 ## Phase 5 — Reply Capture & Insights
-- [ ] "Paste Reply" textarea on lead detail page
-- [ ] API route: reply text → Groq API → extract summary, pain points, objections, interest level
-- [ ] Store as Insight record, linked to lead
-- [ ] Auto-update lead status based on reply (e.g. → "Replied")
+- [x] "Paste Reply" textarea on lead detail page
+- [x] API route: reply text → Groq API → extract summary, pain points, objections, interest level
+- [x] Store as Insight record, linked to lead
+- [x] Auto-update lead status based on reply (e.g. → "Replied")
 
 ---
 

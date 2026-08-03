@@ -66,12 +66,16 @@ export function LeadDetailView({
   const [status, setStatus] = useState<LeadStatus>(lead.status);
   const [lastContactAt, setLastContactAt] = useState<string | null>(lead.last_contact);
   const [conversationItems, setConversationItems] = useState<Conversation[]>(conversations);
+  const [insightItems, setInsightItems] = useState<Insight[]>(insights);
   const [activeTab, setActiveTab] = useState<"profile" | "conversations" | "insights">("profile");
   const [rawCopied, setRawCopied] = useState(false);
   const [generatedCopied, setGeneratedCopied] = useState(false);
   const [generatedMessage, setGeneratedMessage] = useState("");
   const [messageError, setMessageError] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [replyError, setReplyError] = useState<string | null>(null);
   const [isGeneratingType, setIsGeneratingType] = useState<"first" | "followup" | null>(null);
+  const [isCapturingReply, setIsCapturingReply] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [, startTransition] = useTransition();
@@ -161,6 +165,68 @@ export function LeadDetailView({
     } finally {
       setIsGeneratingType(null);
     }
+  };
+
+  const handleCaptureReply = async () => {
+    if (!replyText.trim()) {
+      setReplyError("Please paste the reply text before extracting insights.");
+      return;
+    }
+
+    setReplyError(null);
+    setIsCapturingReply(true);
+    try {
+      const response = await fetch(`/api/leads/${lead.id}/reply`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ reply_text: replyText.trim() }),
+      });
+
+      const data = (await response.json().catch(() => null)) as
+        | {
+            insight?: Insight;
+            conversation?: Conversation;
+            lead_status?: LeadStatus;
+            last_contact?: string | null;
+            error?: string;
+          }
+        | null;
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to capture reply.");
+      }
+
+      if (!data?.insight || !data.conversation || !data.lead_status) {
+        throw new Error("Reply capture response was incomplete.");
+      }
+
+      setConversationItems((current) => [data.conversation as Conversation, ...current]);
+      setInsightItems((current) => [data.insight as Insight, ...current]);
+      setStatus(data.lead_status);
+      setLastContactAt(data.last_contact ?? new Date().toISOString());
+      setReplyText("");
+      setActiveTab("insights");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to capture reply.";
+      setReplyError(message);
+    } finally {
+      setIsCapturingReply(false);
+    }
+  };
+
+  const normalizeInsightList = (value: Insight["pain_points"]): string[] => {
+    if (!value) {
+      return [];
+    }
+    if (Array.isArray(value)) {
+      return value.filter((item): item is string => typeof item === "string" && item.trim() !== "");
+    }
+    if (typeof value === "string" && value.trim()) {
+      return [value.trim()];
+    }
+    return [];
   };
 
   return (
@@ -323,7 +389,7 @@ export function LeadDetailView({
               }`}
             >
               <Sparkles className="h-4 w-4" />
-              Reply Insights ({insights.length})
+              Reply Insights ({insightItems.length})
             </button>
           </nav>
         </div>
@@ -471,6 +537,30 @@ export function LeadDetailView({
                   Manual flow only: copy this text and paste it into LinkedIn yourself.
                 </p>
               </div>
+
+              <div className="space-y-2 border-t border-zinc-200 pt-4">
+                <h3 className="text-sm font-semibold text-zinc-900">Paste Reply</h3>
+                <textarea
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  rows={5}
+                  placeholder="Paste the lead's LinkedIn reply text here..."
+                  className="w-full rounded-lg border border-zinc-300 bg-white p-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+                />
+                {replyError && (
+                  <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                    <span>{replyError}</span>
+                  </div>
+                )}
+                <button
+                  onClick={handleCaptureReply}
+                  disabled={isCapturingReply || !replyText.trim()}
+                  className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-zinc-800 transition-colors disabled:opacity-50"
+                >
+                  {isCapturingReply ? "Extracting Insight..." : "Capture Reply & Extract Insight"}
+                </button>
+              </div>
             </div>
 
             {conversationItems.length === 0 ? (
@@ -513,28 +603,62 @@ export function LeadDetailView({
         {/* Tab 3: Insights (Placeholder for Phase 5) */}
         {activeTab === "insights" && (
           <div className="space-y-4">
-            {insights.length === 0 ? (
+            {insightItems.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-8 text-center">
                 <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 mb-3">
                   <Sparkles className="h-5 w-5" />
                 </div>
                 <h3 className="text-sm font-semibold text-zinc-900">Insight History is Empty</h3>
                 <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
-                  Extracted insights will appear here after reply capture is implemented.
+                  Capture a pasted reply to generate and store the first insight.
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
-                {insights.map((ins) => (
-                  <div key={ins.id} className="rounded-xl border border-zinc-200 bg-white p-4 space-y-2">
+                {insightItems.map((ins) => {
+                  const painPoints = normalizeInsightList(ins.pain_points);
+                  const objections = normalizeInsightList(ins.objections);
+                  return (
+                  <div key={ins.id} className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-zinc-900">{ins.summary}</span>
+                      <span className="text-xs font-bold text-zinc-900">Insight Summary</span>
                       <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-md bg-amber-100 text-amber-800">
                         Interest: {ins.interest_level}
                       </span>
                     </div>
+                    <p className="text-xs text-zinc-700 whitespace-pre-wrap">{ins.summary}</p>
+
+                    <div>
+                      <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 mb-1">
+                        Pain Points
+                      </div>
+                      {painPoints.length === 0 ? (
+                        <p className="text-xs text-zinc-500">—</p>
+                      ) : (
+                        <ul className="list-disc pl-4 text-xs text-zinc-700 space-y-1">
+                          {painPoints.map((point, index) => (
+                            <li key={`${ins.id}-pain-${index}`}>{point}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div>
+                      <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 mb-1">
+                        Objections
+                      </div>
+                      {objections.length === 0 ? (
+                        <p className="text-xs text-zinc-500">—</p>
+                      ) : (
+                        <ul className="list-disc pl-4 text-xs text-zinc-700 space-y-1">
+                          {objections.map((point, index) => (
+                            <li key={`${ins.id}-obj-${index}`}>{point}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   </div>
-                ))}
+                )})}
               </div>
             )}
           </div>

@@ -19,6 +19,16 @@ type MessageGenerationContext = {
   daysElapsed?: number;
 };
 
+type ReplyInsightExtraction = {
+  summary: string;
+  pain_points: string[];
+  objections: string[];
+  current_solution: string[];
+  feature_requests: string[];
+  buying_signals: string[];
+  interest_level: "low" | "medium" | "high";
+};
+
 function getGroqApiKey(): string {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
@@ -214,4 +224,98 @@ Lead profile:
   }
 
   return validateGeneratedMessage(message, maxWords);
+}
+
+function normalizeStringArray(input: unknown): string[] {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+  return input
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+}
+
+export async function extractReplyInsightWithGroq(
+  rawReplyText: string
+): Promise<ReplyInsightExtraction> {
+  const cleanedReply = rawReplyText.trim();
+  if (!cleanedReply) {
+    throw new Error("Reply text cannot be empty.");
+  }
+  if (cleanedReply.length < 12) {
+    throw new Error("Reply text is too short to extract meaningful insight.");
+  }
+
+  const systemPrompt = `You extract structured insight from a pasted reply message.
+Return ONLY JSON with keys:
+- summary: string
+- pain_points: string[]
+- objections: string[]
+- current_solution: string[]
+- feature_requests: string[]
+- buying_signals: string[]
+- interest_level: "low" | "medium" | "high"
+
+Rules:
+- Do not invent facts not present in the reply.
+- Keep summary concise (1-2 sentences).
+- If a field is unknown, return an empty array (or a careful summary for summary).
+- Interest level must be one of low, medium, high.
+- No markdown, no prose outside JSON.`;
+
+  const userPrompt = `Reply text:\n\n${cleanedReply}`;
+  const content = await requestGroqJson(systemPrompt, userPrompt);
+
+  let parsed: {
+    summary?: unknown;
+    pain_points?: unknown;
+    objections?: unknown;
+    current_solution?: unknown;
+    feature_requests?: unknown;
+    buying_signals?: unknown;
+    interest_level?: unknown;
+  };
+
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    throw new Error("Failed to parse structured insight from Groq.");
+  }
+
+  const summary = extractCleanString(parsed.summary);
+  const painPoints = normalizeStringArray(parsed.pain_points);
+  const objections = normalizeStringArray(parsed.objections);
+  const currentSolution = normalizeStringArray(parsed.current_solution);
+  const featureRequests = normalizeStringArray(parsed.feature_requests);
+  const buyingSignals = normalizeStringArray(parsed.buying_signals);
+  const interestLevel = extractCleanString(parsed.interest_level);
+
+  if (!summary || summary.length < 10) {
+    throw new Error("Extracted summary looked invalid. Please paste a clearer reply.");
+  }
+
+  if (!interestLevel || !["low", "medium", "high"].includes(interestLevel)) {
+    throw new Error("Extracted interest level was invalid. Please try again.");
+  }
+
+  if (
+    painPoints.length === 0 &&
+    objections.length === 0 &&
+    currentSolution.length === 0 &&
+    featureRequests.length === 0 &&
+    buyingSignals.length === 0
+  ) {
+    throw new Error("Reply did not contain enough signal to extract insight.");
+  }
+
+  return {
+    summary,
+    pain_points: painPoints,
+    objections,
+    current_solution: currentSolution,
+    feature_requests: featureRequests,
+    buying_signals: buyingSignals,
+    interest_level: interestLevel as "low" | "medium" | "high",
+  };
 }

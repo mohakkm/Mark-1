@@ -48,9 +48,24 @@ Last updated: 2026-08-03 — by: Copilot CLI
   - Follow-up quality fix:
     - Follow-up prompt now explicitly includes previous outgoing message text and days elapsed since last contact.
     - First-message generation is now blocked after one outgoing message exists for a lead; follow-up must be used afterward.
+- Phase 5 complete & verified:
+  - New route: `POST /api/leads/[id]/reply` in `src/app/api/leads/[id]/reply/route.ts`.
+    - Accepts pasted reply text.
+    - Runs Groq extraction with structured output validation.
+    - Saves raw reply to `conversations` with `type: incoming`.
+    - Saves extracted insight to `insights` linked to `lead_id`.
+    - Updates lead status to `replied` unless already `interested` / `not_interested` (no downgrade).
+  - `src/lib/groq.ts` now includes reply extraction for:
+    - `summary`, `pain_points`, `objections`, `current_solution`, `feature_requests`, `buying_signals`, `interest_level`.
+    - Rejects weak/garbage outputs and invalid enums instead of fabricating.
+  - Lead detail UI updates in `src/components/lead-detail-view.tsx`:
+    - Added "Paste Reply" textarea + capture button in Conversations tab.
+    - Shows API validation/runtime errors inline.
+    - Immediately appends incoming conversation and new insight after successful capture.
+    - Insights tab now shows read-only summary, pain points, objections, and interest level.
 
 ## What's mid-implementation / half-done
-- None in Phase 4.
+- None in Phase 5.
 
 ## Known gaps (deferred, not blocking)
 - **Password reset page** — no `/forgot-password` or reset flow yet. Single-user app; founder can recover via Supabase dashboard if needed. Add before any second user.
@@ -60,4 +75,4 @@ Last updated: 2026-08-03 — by: Copilot CLI
 - `FolderGear` icon export in `lucide-react` does not exist; replaced with `FolderCog`.
 
 ## Next concrete step
-- Phase 5: Reply Capture & Insights (paste reply, extract signals, save insights, auto-update lead status).
+- Phase 6: Validation Dashboard (per-idea KPIs, recurring pain points/objections, validation verdict framing).
