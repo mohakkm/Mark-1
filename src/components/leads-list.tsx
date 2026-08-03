@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import type { Lead, LeadStatus } from "@/types/lead";
 import { updateLeadStatusAction, deleteLeadAction } from "@/app/actions/leads";
+import { formatUtcDayMonth } from "@/lib/date-format";
 import {
   Search,
   Plus,
@@ -12,6 +14,7 @@ import {
   Loader2,
   X,
   Filter,
+  ArrowUpRight,
 } from "lucide-react";
 
 interface LeadsListProps {
@@ -177,7 +180,12 @@ export function LeadsList({
                   <tr key={lead.id} className="hover:bg-zinc-50/50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="font-semibold text-zinc-900 text-sm flex items-center gap-1.5">
-                        {lead.name}
+                        <Link
+                          href={`/leads/${lead.id}`}
+                          className="hover:text-amber-700 transition-colors"
+                        >
+                          {lead.name}
+                        </Link>
                         {lead.linkedin_url && (
                           <a
                             href={lead.linkedin_url}
@@ -224,14 +232,18 @@ export function LeadsList({
                     </td>
 
                     <td className="px-4 py-3 text-zinc-500 whitespace-nowrap">
-                      {new Date(lead.created_at).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                      })}
+                      {formatUtcDayMonth(lead.created_at)}
                     </td>
 
                     <td className="px-4 py-3 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1">
+                        <Link
+                          href={`/leads/${lead.id}`}
+                          className="rounded-md p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700"
+                          title="Open lead detail"
+                        >
+                          <ArrowUpRight className="h-4 w-4" />
+                        </Link>
                         <button
                           onClick={() => setViewRawLead(lead)}
                           className="rounded-md p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700"

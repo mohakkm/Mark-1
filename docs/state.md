@@ -1,6 +1,6 @@
 # Current State (update this every session, before you stop)
 
-Last updated: 2026-07-31 — by: Antigravity
+Last updated: 2026-08-03 — by: Copilot CLI
 
 ## What's currently working
 - Phase 1 verified end-to-end: signup/login, Supabase connected, all four tables live
@@ -23,9 +23,17 @@ Last updated: 2026-07-31 — by: Antigravity
   - Phase 3 UI Components:
     - `AddLeadModal`: Single textarea for pasting LinkedIn profile text with explicit error alert rendering.
     - `LeadsList`: Table view displaying leads scoped to active idea, inline status dropdown switcher (`not_contacted`, `messaged`, `replied`, `interested`, `not_interested`), search bar by name/role/company, status filter, and raw profile text inspector modal.
+  - Lead detail route + UI:
+    - New route: `src/app/leads/[id]/page.tsx` loads authenticated lead details and validates ownership through the linked idea.
+    - `LeadDetailView` is now wired and reachable from the leads list (lead name and action icon).
+    - Detail page explicitly shows structured profile fields (`name`, `role`, `company`, `headline`, `status`, `notes`) plus `raw_pasted_profile`.
+    - Conversation and insight history sections are visible with intentional empty states for now.
+  - Hydration-safe date rendering:
+    - Replaced locale-dependent client/server date rendering with fixed UTC format helpers in `src/lib/date-format.ts`.
+    - Leads and lead-detail date fields now render deterministic strings across server and client.
 
 ## What's mid-implementation / half-done
-- Lead detail page (single lead view) to be created in Phase 4 / 5 for AI message generation & reply capture.
+- None in Phase 3.
 
 ## Known gaps (deferred, not blocking)
 - **Password reset page** — no `/forgot-password` or reset flow yet. Single-user app; founder can recover via Supabase dashboard if needed. Add before any second user.
@@ -35,4 +43,4 @@ Last updated: 2026-07-31 — by: Antigravity
 - `FolderGear` icon export in `lucide-react` does not exist; replaced with `FolderCog`.
 
 ## Next concrete step
-- Lead detail page & Phase 4: AI Messaging ("Generate First Message" using idea context + lead profile).
+- Phase 4: AI Messaging ("Generate First Message" using idea context + lead profile).

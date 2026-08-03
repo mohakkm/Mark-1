@@ -36,7 +36,7 @@ RULE FOR EVERY AI AGENT / SESSION (Cursor, Antigravity, VSCode/Copilot, whoever)
 - [x] API route: send pasted text to Groq API → structured JSON (name, role, company, headline)
 - [x] Save structured lead to DB, linked to current idea
 - [x] Leads table view (list, search, status filter)
-- [ ] Lead detail page
+- [x] Lead detail page
 
 ---
 

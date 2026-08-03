@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { Lead, LeadStatus, Conversation, Insight } from "@/types/lead";
 import type { Idea } from "@/types/idea";
 import { updateLeadStatusAction, deleteLeadAction } from "@/app/actions/leads";
+import { formatUtcDayMonthYear } from "@/lib/date-format";
 import {
   ArrowLeft,
   ExternalLink,
@@ -212,13 +213,13 @@ export function LeadDetailView({
 
                 <div className="flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5 text-zinc-400" />
-                  <span>Added {new Date(lead.created_at).toLocaleDateString()}</span>
+                  <span>Added {formatUtcDayMonthYear(lead.created_at)}</span>
                 </div>
 
                 {lead.last_contact && (
                   <div className="flex items-center gap-1.5">
                     <Clock className="h-3.5 w-3.5 text-zinc-400" />
-                    <span>Last Contact {new Date(lead.last_contact).toLocaleDateString()}</span>
+                    <span>Last Contact {formatUtcDayMonthYear(lead.last_contact)}</span>
                   </div>
                 )}
               </div>
@@ -238,7 +239,7 @@ export function LeadDetailView({
               }`}
             >
               <FileText className="h-4 w-4" />
-              Raw Profile & Notes
+              Profile
             </button>
 
             <button
@@ -270,14 +271,49 @@ export function LeadDetailView({
         {/* Tab 1: Profile & Notes */}
         {activeTab === "profile" && (
           <div className="space-y-6">
-            {lead.notes && (
-              <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-xs">
-                <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
-                  Initial Notes
-                </h3>
-                <p className="text-sm text-zinc-700">{lead.notes}</p>
-              </div>
-            )}
+            <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-xs">
+              <h3 className="text-sm font-semibold text-zinc-900 mb-4">Structured Profile</h3>
+              <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <dt className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                    Name
+                  </dt>
+                  <dd className="mt-1 text-sm text-zinc-900">{lead.name}</dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                    Status
+                  </dt>
+                  <dd className="mt-1 text-sm text-zinc-900">{statusMeta.label}</dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                    Role
+                  </dt>
+                  <dd className="mt-1 text-sm text-zinc-900">{lead.role || "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                    Company
+                  </dt>
+                  <dd className="mt-1 text-sm text-zinc-900">{lead.company || "—"}</dd>
+                </div>
+                <div className="sm:col-span-2">
+                  <dt className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                    Headline
+                  </dt>
+                  <dd className="mt-1 text-sm text-zinc-900">{lead.headline || "—"}</dd>
+                </div>
+                <div className="sm:col-span-2">
+                  <dt className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                    Notes
+                  </dt>
+                  <dd className="mt-1 text-sm text-zinc-900 whitespace-pre-wrap">
+                    {lead.notes || "—"}
+                  </dd>
+                </div>
+              </dl>
+            </div>
 
             <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
@@ -314,68 +350,30 @@ export function LeadDetailView({
         {/* Tab 2: Conversations (Placeholder for Phase 4) */}
         {activeTab === "conversations" && (
           <div className="space-y-4">
-            {conversations.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-8 text-center">
-                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 mb-3">
-                  <MessageSquare className="h-5 w-5" />
-                </div>
-                <h3 className="text-sm font-semibold text-zinc-900">No Messages Yet</h3>
-                <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
-                  AI outreach message generation will be available in Phase 4 (&quot;Generate First Message&quot;).
-                </p>
+            <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-8 text-center">
+              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 mb-3">
+                <MessageSquare className="h-5 w-5" />
               </div>
-            ) : (
-              <div className="space-y-3">
-                {conversations.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`rounded-xl border p-4 ${
-                      msg.type === "outgoing"
-                        ? "border-blue-200 bg-blue-50/50"
-                        : "border-purple-200 bg-purple-50/50"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-xs font-semibold mb-1">
-                      <span className={msg.type === "outgoing" ? "text-blue-800" : "text-purple-800"}>
-                        {msg.type === "outgoing" ? "Generated Message" : "Received Reply"}
-                      </span>
-                      <span className="text-zinc-400">{new Date(msg.created_at).toLocaleString()}</span>
-                    </div>
-                    <p className="text-xs text-zinc-700 whitespace-pre-wrap">{msg.content}</p>
-                  </div>
-                ))}
-              </div>
-            )}
+              <h3 className="text-sm font-semibold text-zinc-900">Conversation History is Empty</h3>
+              <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
+                Outreach and reply conversation entries will appear here in later phases.
+              </p>
+            </div>
           </div>
         )}
 
         {/* Tab 3: Insights (Placeholder for Phase 5) */}
         {activeTab === "insights" && (
           <div className="space-y-4">
-            {insights.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-8 text-center">
-                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 mb-3">
-                  <Sparkles className="h-5 w-5" />
-                </div>
-                <h3 className="text-sm font-semibold text-zinc-900">No Insights Recorded</h3>
-                <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
-                  Paste lead replies in Phase 5 to run Groq signal extraction for pain points, objections, and sentiment.
-                </p>
+            <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-8 text-center">
+              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 mb-3">
+                <Sparkles className="h-5 w-5" />
               </div>
-            ) : (
-              <div className="space-y-3">
-                {insights.map((ins) => (
-                  <div key={ins.id} className="rounded-xl border border-zinc-200 bg-white p-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-zinc-900">{ins.summary}</span>
-                      <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-md bg-amber-100 text-amber-800">
-                        Interest: {ins.interest_level}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+              <h3 className="text-sm font-semibold text-zinc-900">Insight History is Empty</h3>
+              <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
+                Extracted insights will appear here after reply capture is implemented.
+              </p>
+            </div>
           </div>
         )}
       </main>
