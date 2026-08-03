@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { LeadDetailView } from "@/components/lead-detail-view";
-import type { Lead } from "@/types/lead";
+import type { Conversation, Insight, Lead } from "@/types/lead";
 import type { Idea } from "@/types/idea";
 
 type LeadDetailPageProps = {
@@ -41,12 +41,32 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
     notFound();
   }
 
+  const { data: conversationsData, error: conversationsError } = await supabase
+    .from("conversations")
+    .select("*")
+    .eq("lead_id", lead.id)
+    .order("created_at", { ascending: false });
+
+  if (conversationsError) {
+    throw new Error(conversationsError.message);
+  }
+
+  const { data: insightsData, error: insightsError } = await supabase
+    .from("insights")
+    .select("*")
+    .eq("lead_id", lead.id)
+    .order("created_at", { ascending: false });
+
+  if (insightsError) {
+    throw new Error(insightsError.message);
+  }
+
   return (
     <LeadDetailView
       lead={lead}
       idea={ideaData as Idea}
-      conversations={[]}
-      insights={[]}
+      conversations={(conversationsData as Conversation[]) ?? []}
+      insights={(insightsData as Insight[]) ?? []}
     />
   );
 }

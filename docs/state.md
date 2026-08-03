@@ -31,9 +31,26 @@ Last updated: 2026-08-03 — by: Copilot CLI
   - Hydration-safe date rendering:
     - Replaced locale-dependent client/server date rendering with fixed UTC format helpers in `src/lib/date-format.ts`.
     - Leads and lead-detail date fields now render deterministic strings across server and client.
+- Phase 4 complete & verified:
+  - New route: `POST /api/leads/[id]/message` in `src/app/api/leads/[id]/message/route.ts`.
+    - Supports `type: "first" | "followup"`.
+    - Uses idea context (`name`, `description`, `target_customer`) + lead profile (`name`, `role`, `company`, `headline`) for generation.
+    - Follow-up uses previous outgoing conversation and `days elapsed` from `last_contact`.
+    - Saves generated message to `conversations` as `type: outgoing` and updates `leads.last_contact` (and status to `messaged` when first contact).
+  - `src/lib/groq.ts` now includes outreach message generation with guardrails:
+    - ≤90 words, non-empty, basic malformed/gibberish checks.
+    - Explicit error surfacing when output is broken.
+  - Lead detail Conversations tab now supports:
+    - Generate First Message
+    - Generate Follow-up
+    - Generated message textbox + copy button (manual LinkedIn copy/paste only; no auto-send)
+    - Persisted conversation history rendering.
+  - Follow-up quality fix:
+    - Follow-up prompt now explicitly includes previous outgoing message text and days elapsed since last contact.
+    - First-message generation is now blocked after one outgoing message exists for a lead; follow-up must be used afterward.
 
 ## What's mid-implementation / half-done
-- None in Phase 3.
+- None in Phase 4.
 
 ## Known gaps (deferred, not blocking)
 - **Password reset page** — no `/forgot-password` or reset flow yet. Single-user app; founder can recover via Supabase dashboard if needed. Add before any second user.
@@ -43,4 +60,4 @@ Last updated: 2026-08-03 — by: Copilot CLI
 - `FolderGear` icon export in `lucide-react` does not exist; replaced with `FolderCog`.
 
 ## Next concrete step
-- Phase 4: AI Messaging ("Generate First Message" using idea context + lead profile).
+- Phase 5: Reply Capture & Insights (paste reply, extract signals, save insights, auto-update lead status).

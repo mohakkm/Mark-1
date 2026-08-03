@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type { Lead, LeadStatus, Conversation, Insight } from "@/types/lead";
 import type { Idea } from "@/types/idea";
 import { updateLeadStatusAction, deleteLeadAction } from "@/app/actions/leads";
-import { formatUtcDayMonthYear } from "@/lib/date-format";
+import { formatUtcDayMonthYear, formatUtcDayMonthYearTime } from "@/lib/date-format";
 import {
   ArrowLeft,
   ExternalLink,
@@ -23,6 +23,7 @@ import {
   Loader2,
   Copy,
   Clock,
+  AlertCircle,
 } from "lucide-react";
 
 interface LeadDetailViewProps {
@@ -63,13 +64,21 @@ export function LeadDetailView({
 }: LeadDetailViewProps) {
   const router = useRouter();
   const [status, setStatus] = useState<LeadStatus>(lead.status);
+  const [lastContactAt, setLastContactAt] = useState<string | null>(lead.last_contact);
+  const [conversationItems, setConversationItems] = useState<Conversation[]>(conversations);
   const [activeTab, setActiveTab] = useState<"profile" | "conversations" | "insights">("profile");
-  const [copied, setCopied] = useState(false);
+  const [rawCopied, setRawCopied] = useState(false);
+  const [generatedCopied, setGeneratedCopied] = useState(false);
+  const [generatedMessage, setGeneratedMessage] = useState("");
+  const [messageError, setMessageError] = useState<string | null>(null);
+  const [isGeneratingType, setIsGeneratingType] = useState<"first" | "followup" | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [, startTransition] = useTransition();
 
   const statusMeta = STATUS_LABELS[status] || STATUS_LABELS.not_contacted;
+  const hasOutgoingMessage = conversationItems.some((item) => item.type === "outgoing");
+  const canGenerateFollowup = hasOutgoingMessage;
 
   const handleStatusChange = (newStatus: LeadStatus) => {
     setStatus(newStatus);
@@ -99,8 +108,59 @@ export function LeadDetailView({
 
   const handleCopyRaw = () => {
     navigator.clipboard.writeText(lead.raw_pasted_profile);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setRawCopied(true);
+    setTimeout(() => setRawCopied(false), 2000);
+  };
+
+  const handleCopyGenerated = () => {
+    if (!generatedMessage) return;
+    navigator.clipboard.writeText(generatedMessage);
+    setGeneratedCopied(true);
+    setTimeout(() => setGeneratedCopied(false), 2000);
+  };
+
+  const handleGenerateMessage = async (type: "first" | "followup") => {
+    if (type === "first" && hasOutgoingMessage) {
+      setMessageError("First message already exists for this lead. Use Generate Follow-up.");
+      return;
+    }
+
+    setMessageError(null);
+    setGeneratedCopied(false);
+    setIsGeneratingType(type);
+    try {
+      const response = await fetch(`/api/leads/${lead.id}/message`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ type }),
+      });
+
+      const data = (await response.json().catch(() => null)) as
+        | { message?: string; conversation?: Conversation; error?: string }
+        | null;
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to generate message.");
+      }
+
+      if (!data?.message || !data.conversation) {
+        throw new Error("Message generation response was incomplete.");
+      }
+
+      setGeneratedMessage(data.message);
+      setConversationItems((current) => [data.conversation as Conversation, ...current]);
+      setLastContactAt(new Date().toISOString());
+      if (status === "not_contacted") {
+        setStatus("messaged");
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to generate message.";
+      setMessageError(message);
+    } finally {
+      setIsGeneratingType(null);
+    }
   };
 
   return (
@@ -216,10 +276,10 @@ export function LeadDetailView({
                   <span>Added {formatUtcDayMonthYear(lead.created_at)}</span>
                 </div>
 
-                {lead.last_contact && (
+                {lastContactAt && (
                   <div className="flex items-center gap-1.5">
                     <Clock className="h-3.5 w-3.5 text-zinc-400" />
-                    <span>Last Contact {formatUtcDayMonthYear(lead.last_contact)}</span>
+                    <span>Last Contact {formatUtcDayMonthYear(lastContactAt)}</span>
                   </div>
                 )}
               </div>
@@ -251,7 +311,7 @@ export function LeadDetailView({
               }`}
             >
               <MessageSquare className="h-4 w-4" />
-              Outreach & Messages ({conversations.length})
+              Outreach & Messages ({conversationItems.length})
             </button>
 
             <button
@@ -326,7 +386,7 @@ export function LeadDetailView({
                   onClick={handleCopyRaw}
                   className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100 transition-colors"
                 >
-                  {copied ? (
+                  {rawCopied ? (
                     <>
                       <Check className="h-3.5 w-3.5 text-emerald-600" />
                       Copied!
@@ -350,30 +410,133 @@ export function LeadDetailView({
         {/* Tab 2: Conversations (Placeholder for Phase 4) */}
         {activeTab === "conversations" && (
           <div className="space-y-4">
-            <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-8 text-center">
-              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 mb-3">
-                <MessageSquare className="h-5 w-5" />
+            <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-xs space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => handleGenerateMessage("first")}
+                  disabled={isGeneratingType !== null || !idea || hasOutgoingMessage}
+                  className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 transition-colors disabled:opacity-50"
+                >
+                  {hasOutgoingMessage
+                    ? "First Message Already Generated"
+                    : isGeneratingType === "first"
+                      ? "Generating..."
+                      : "Generate First Message"}
+                </button>
+                <button
+                  onClick={() => handleGenerateMessage("followup")}
+                  disabled={isGeneratingType !== null || !canGenerateFollowup || !idea}
+                  className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors disabled:opacity-50"
+                >
+                  {isGeneratingType === "followup" ? "Generating..." : "Generate Follow-up"}
+                </button>
               </div>
-              <h3 className="text-sm font-semibold text-zinc-900">Conversation History is Empty</h3>
-              <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
-                Outreach and reply conversation entries will appear here in later phases.
-              </p>
+
+              {messageError && (
+                <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                  <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <span>{messageError}</span>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-zinc-900">Generated Message</h3>
+                  <button
+                    onClick={handleCopyGenerated}
+                    disabled={!generatedMessage}
+                    className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-100 transition-colors disabled:opacity-50"
+                  >
+                    {generatedCopied ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-emerald-600" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5 text-zinc-400" />
+                        Copy Message
+                      </>
+                    )}
+                  </button>
+                </div>
+                <textarea
+                  value={generatedMessage}
+                  readOnly
+                  rows={5}
+                  placeholder="Generate a message to preview it here. This app never sends anything to LinkedIn automatically."
+                  className="w-full rounded-lg border border-zinc-300 bg-white p-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+                />
+                <p className="text-[11px] text-zinc-500">
+                  Manual flow only: copy this text and paste it into LinkedIn yourself.
+                </p>
+              </div>
             </div>
+
+            {conversationItems.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-8 text-center">
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 mb-3">
+                  <MessageSquare className="h-5 w-5" />
+                </div>
+                <h3 className="text-sm font-semibold text-zinc-900">No Messages Yet</h3>
+                <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
+                  Generate your first outreach message above. Messages are saved to history after generation.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {conversationItems.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`rounded-xl border p-4 ${
+                      msg.type === "outgoing"
+                        ? "border-blue-200 bg-blue-50/50"
+                        : "border-purple-200 bg-purple-50/50"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-xs font-semibold mb-1">
+                      <span className={msg.type === "outgoing" ? "text-blue-800" : "text-purple-800"}>
+                        {msg.type === "outgoing" ? "Outgoing Message" : "Incoming Reply"}
+                      </span>
+                      <span className="text-zinc-400">
+                        {formatUtcDayMonthYearTime(msg.created_at)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-zinc-700 whitespace-pre-wrap">{msg.content}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* Tab 3: Insights (Placeholder for Phase 5) */}
         {activeTab === "insights" && (
           <div className="space-y-4">
-            <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-8 text-center">
-              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 mb-3">
-                <Sparkles className="h-5 w-5" />
+            {insights.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-8 text-center">
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 mb-3">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <h3 className="text-sm font-semibold text-zinc-900">Insight History is Empty</h3>
+                <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
+                  Extracted insights will appear here after reply capture is implemented.
+                </p>
               </div>
-              <h3 className="text-sm font-semibold text-zinc-900">Insight History is Empty</h3>
-              <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
-                Extracted insights will appear here after reply capture is implemented.
-              </p>
-            </div>
+            ) : (
+              <div className="space-y-3">
+                {insights.map((ins) => (
+                  <div key={ins.id} className="rounded-xl border border-zinc-200 bg-white p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-zinc-900">{ins.summary}</span>
+                      <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-md bg-amber-100 text-amber-800">
+                        Interest: {ins.interest_level}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>

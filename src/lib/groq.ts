@@ -1,29 +1,36 @@
 import type { GroqStructuredLead } from "@/types/lead";
 
-export async function parseLinkedInProfileWithGroq(
-  rawProfileText: string
-): Promise<GroqStructuredLead> {
+type MessageGenerationType = "first" | "followup";
+
+type MessageGenerationContext = {
+  type: MessageGenerationType;
+  idea: {
+    name: string;
+    description: string;
+    target_customer: string;
+  };
+  lead: {
+    name: string;
+    role: string | null;
+    company: string | null;
+    headline: string | null;
+  };
+  previousMessage?: string;
+  daysElapsed?: number;
+};
+
+function getGroqApiKey(): string {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     throw new Error(
       "GROQ_API_KEY is not set. Please add GROQ_API_KEY to your environment variables (.env.local)."
     );
   }
+  return apiKey;
+}
 
-  const systemPrompt = `You are a strict data extraction assistant specializing in LinkedIn profile parsing.
-Analyze the raw text pasted by a user and determine if it is a valid LinkedIn profile or professional profile for an individual person.
-
-Return ONLY a JSON object with:
-- "is_valid_profile": boolean (true ONLY if the text is an individual's LinkedIn or professional profile; false if text is random webpage content, article, generic text, code, or non-profile content)
-- "name": full name of the person if clearly present in the text, else null (DO NOT invent, guess, or assume a name if not explicitly stated)
-- "role": current or primary job title / role if present, else null
-- "company": current or primary company / organization if present, else null
-- "headline": LinkedIn headline or summary tagline if present, else null
-
-Format response strictly as valid JSON without markdown wrapping or commentary.`;
-
-  const userPrompt = `Raw Profile Content:\n\n${rawProfileText}`;
-
+async function requestGroqJson(systemPrompt: string, userPrompt: string): Promise<string> {
+  const apiKey = getGroqApiKey();
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -36,7 +43,7 @@ Format response strictly as valid JSON without markdown wrapping or commentary.`
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: 0.1,
+      temperature: 0.3,
       response_format: { type: "json_object" },
     }),
   });
@@ -57,6 +64,65 @@ Format response strictly as valid JSON without markdown wrapping or commentary.`
     throw new Error("Groq API returned an empty completion message.");
   }
 
+  return content;
+}
+
+function extractCleanString(input: unknown): string | null {
+  if (typeof input !== "string") {
+    return null;
+  }
+  const cleaned = input.trim();
+  return cleaned ? cleaned : null;
+}
+
+function validateGeneratedMessage(message: string, maxWords: number): string {
+  const cleaned = message.replace(/\s+/g, " ").trim();
+  if (!cleaned) {
+    throw new Error("Groq returned an empty message. Please try again.");
+  }
+
+  const words = cleaned.split(" ").filter(Boolean);
+  if (words.length > maxWords) {
+    throw new Error(
+      `Generated message was too long (${words.length} words). Please try again.`
+    );
+  }
+
+  if (!/[A-Za-z]/.test(cleaned)) {
+    throw new Error("Generated message appears invalid. Please try again.");
+  }
+
+  if (words.length < 8) {
+    throw new Error("Generated message was too short to be useful. Please try again.");
+  }
+
+  const punctuationRatio =
+    (cleaned.match(/[^A-Za-z0-9\s]/g)?.length ?? 0) / Math.max(cleaned.length, 1);
+  if (punctuationRatio > 0.25) {
+    throw new Error("Generated message appears malformed. Please try again.");
+  }
+
+  return cleaned;
+}
+
+export async function parseLinkedInProfileWithGroq(
+  rawProfileText: string
+): Promise<GroqStructuredLead> {
+  const systemPrompt = `You are a strict data extraction assistant specializing in LinkedIn profile parsing.
+Analyze the raw text pasted by a user and determine if it is a valid LinkedIn profile or professional profile for an individual person.
+
+Return ONLY a JSON object with:
+- "is_valid_profile": boolean (true ONLY if the text is an individual's LinkedIn or professional profile; false if text is random webpage content, article, generic text, code, or non-profile content)
+- "name": full name of the person if clearly present in the text, else null (DO NOT invent, guess, or assume a name if not explicitly stated)
+- "role": current or primary job title / role if present, else null
+- "company": current or primary company / organization if present, else null
+- "headline": LinkedIn headline or summary tagline if present, else null
+
+Format response strictly as valid JSON without markdown wrapping or commentary.`;
+
+  const userPrompt = `Raw Profile Content:\n\n${rawProfileText}`;
+  const content = await requestGroqJson(systemPrompt, userPrompt);
+
   let parsed: {
     is_valid_profile?: boolean;
     name?: string | null;
@@ -73,14 +139,17 @@ Format response strictly as valid JSON without markdown wrapping or commentary.`
 
   const isValidProfile = Boolean(parsed.is_valid_profile);
   const name =
-    typeof parsed.name === "string" && parsed.name.trim() && parsed.name.trim() !== "Unknown Lead"
+    typeof parsed.name === "string" &&
+    parsed.name.trim() &&
+    parsed.name.trim() !== "Unknown Lead"
       ? parsed.name.trim()
       : null;
   const role = typeof parsed.role === "string" && parsed.role.trim() ? parsed.role.trim() : null;
-  const company = typeof parsed.company === "string" && parsed.company.trim() ? parsed.company.trim() : null;
-  const headline = typeof parsed.headline === "string" && parsed.headline.trim() ? parsed.headline.trim() : null;
+  const company =
+    typeof parsed.company === "string" && parsed.company.trim() ? parsed.company.trim() : null;
+  const headline =
+    typeof parsed.headline === "string" && parsed.headline.trim() ? parsed.headline.trim() : null;
 
-  // Reject if Groq marked as invalid, or name is missing, or no professional metadata fields exist
   if (!isValidProfile || !name || (!role && !company && !headline)) {
     throw new Error("Couldn't detect a LinkedIn profile in this text — please check your paste.");
   }
@@ -91,4 +160,58 @@ Format response strictly as valid JSON without markdown wrapping or commentary.`
     company,
     headline,
   };
+}
+
+export async function generateOutreachMessageWithGroq(
+  context: MessageGenerationContext
+): Promise<string> {
+  const maxWords = 90;
+  const systemPrompt = `You write concise LinkedIn outreach messages for founder idea validation.
+Rules:
+- Return ONLY JSON: {"message":"..."} with a single message string.
+- Keep the message under ${maxWords} words.
+- Friendly, respectful, human tone.
+- No hard selling, no pitch deck language, no urgency tricks.
+- Ask for insight and learning, not a sales call.
+- Avoid repetitive phrasing and avoid sounding automated.
+- Use plain English and keep it easy to copy/paste.
+- Do not include markdown, bullets, or quotes around the full message.`;
+
+  if (context.type === "followup" && !context.previousMessage) {
+    throw new Error("Missing previous outgoing message for follow-up generation.");
+  }
+
+  const followupSection =
+    context.type === "followup"
+      ? `\nYou previously reached out with this message: ${context.previousMessage}
+It's been ${context.daysElapsed ?? 0} days with no reply.
+Write a brief, polite follow-up that doesn't repeat the same question, acknowledges you're following up, and stays low-pressure.`
+      : "\nWrite a first outreach message asking for perspective and insight on the problem space.";
+
+  const userPrompt = `Idea context:
+- Name: ${context.idea.name}
+- Description: ${context.idea.description}
+- Target customer: ${context.idea.target_customer}
+
+Lead profile:
+- Name: ${context.lead.name}
+- Role: ${context.lead.role ?? "Unknown"}
+- Company: ${context.lead.company ?? "Unknown"}
+- Headline: ${context.lead.headline ?? "Unknown"}${followupSection}`;
+
+  const content = await requestGroqJson(systemPrompt, userPrompt);
+
+  let parsed: { message?: unknown };
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    throw new Error("Failed to parse generated message from Groq.");
+  }
+
+  const message = extractCleanString(parsed.message);
+  if (!message) {
+    throw new Error("Groq returned an invalid message payload. Please try again.");
+  }
+
+  return validateGeneratedMessage(message, maxWords);
 }

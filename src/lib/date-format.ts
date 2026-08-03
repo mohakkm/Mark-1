@@ -38,3 +38,14 @@ export function formatUtcDayMonthYear(value: string): string {
 
   return `${date.getUTCDate()} ${UTC_MONTHS_SHORT[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
 }
+
+export function formatUtcDayMonthYearTime(value: string): string {
+  const date = parseDateInput(value);
+  if (!date) {
+    return "—";
+  }
+
+  const hours = `${date.getUTCHours()}`.padStart(2, "0");
+  const minutes = `${date.getUTCMinutes()}`.padStart(2, "0");
+  return `${date.getUTCDate()} ${UTC_MONTHS_SHORT[date.getUTCMonth()]} ${date.getUTCFullYear()}, ${hours}:${minutes} UTC`;
+}

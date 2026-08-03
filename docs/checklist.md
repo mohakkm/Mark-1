@@ -41,9 +41,9 @@ RULE FOR EVERY AI AGENT / SESSION (Cursor, Antigravity, VSCode/Copilot, whoever)
 ---
 
 ## Phase 4 — AI Messaging
-- [ ] "Generate First Message" — uses idea context + lead profile → draft outreach (≤90 words)
-- [ ] Copy-to-clipboard button (message is sent manually by user on LinkedIn — never automated)
-- [ ] "Generate Follow-up" — uses previous message + days elapsed + lead profile
+- [x] "Generate First Message" — uses idea context + lead profile → draft outreach (≤90 words)
+- [x] Copy-to-clipboard button (message is sent manually by user on LinkedIn — never automated)
+- [x] "Generate Follow-up" — uses previous message + days elapsed + lead profile
 
 ---
 
