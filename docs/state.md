@@ -1,6 +1,6 @@
 # Current State (update this every session, before you stop)
 
-Last updated: 2026-08-03 — by: Copilot CLI
+Last updated: 2026-08-04 — by: Codex
 
 ## What's currently working
 - Phase 1 verified end-to-end: signup/login, Supabase connected, all four tables live
@@ -63,16 +63,40 @@ Last updated: 2026-08-03 — by: Copilot CLI
     - Shows API validation/runtime errors inline.
     - Immediately appends incoming conversation and new insight after successful capture.
     - Insights tab now shows read-only summary, pain points, objections, and interest level.
+- Phase 6 complete & verified:
+  - New shared analytics types in `src/types/dashboard.ts`.
+  - New aggregate helper in `src/lib/dashboard.ts`.
+    - Computes `totalLeads`, `messagedCount`, `repliedCount`, `replyRate`, and `interestedCount` for the active idea.
+    - Reply rate is correctly calculated as `replied / messaged`.
+    - Uses the latest insight per lead for interest distribution so one lead cannot overweight the validation signal by replying multiple times.
+    - Aggregates recurring pain points and objections across all insights with case-insensitive grouping, per-insight dedupe, and descending mention count.
+  - New route: `GET /api/ideas/[id]/dashboard` in `src/app/api/ideas/[id]/dashboard/route.ts`.
+    - Auth-required and ownership-scoped to the current user's idea.
+    - Returns the full validation dashboard payload for a single idea.
+  - New dashboard analytics view in `src/components/validation-dashboard.tsx`.
+    - Shows top verdict framing: `X/total leads replied (Y%), Z marked interested`.
+    - Shows summary stat cards: total leads, messaged, replied, reply rate.
+    - Shows interest distribution with count/percentage and a short interpretation note.
+    - Shows ranked recurring pain points and recurring objections frequency lists.
+  - `src/app/page.tsx` now fetches idea-scoped insights for the selected idea and builds the dashboard server-side.
+  - `src/components/dashboard-view.tsx` now renders the validation dashboard above the leads list; switching the active idea updates the entire analytics block automatically through the existing idea-switcher flow.
+  - Validation completed on 2026-08-04:
+    - `npm run lint` passes.
+    - `npm run build` passes.
+  - Cleanup included:
+    - `src/components/idea-modal.tsx` no longer uses synchronous `setState` inside `useEffect`; the modal form now initializes from props through keyed remounting, satisfying the current React/ESLint rule.
 
 ## What's mid-implementation / half-done
-- None in Phase 5.
+- None in Phase 6.
 
 ## Known gaps (deferred, not blocking)
 - **Password reset page** — no `/forgot-password` or reset flow yet. Single-user app; founder can recover via Supabase dashboard if needed. Add before any second user.
+- **Next.js 16 warning** — the build warns that the `middleware` file convention is deprecated in favor of `proxy`; current build still succeeds.
+- **Node runtime warning** — the build on 2026-08-04 warns that future `@supabase/supabase-js` releases will require Node.js 22+; current build still succeeds on Node.js 20.
 
 ## What broke last session and why (so the next agent doesn't repeat it)
 - Pasting non-LinkedIn text previously allowed Groq to guess/hallucinate names ("Unknown Lead" or random webpage author). Resolved by adding strict `is_valid_profile` check and metadata presence verification in `src/lib/groq.ts`.
 - `FolderGear` icon export in `lucide-react` does not exist; replaced with `FolderCog`.
 
 ## Next concrete step
-- Phase 6: Validation Dashboard (per-idea KPIs, recurring pain points/objections, validation verdict framing).
+- Phase 7: Follow-up Queue (sort by `last_contact`, highlight overdue leads at 3/5/7+ days, keep the workflow manual-only).

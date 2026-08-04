@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useTransition } from "react";
 import type { Idea, IdeaInput } from "@/types/idea";
 import { createIdeaAction, updateIdeaAction } from "@/app/actions/ideas";
 import { X, Lightbulb, Loader2, Sparkles } from "lucide-react";
@@ -12,28 +12,32 @@ interface IdeaModalProps {
 }
 
 export function IdeaModal({ isOpen, onClose, ideaToEdit }: IdeaModalProps) {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [targetCustomer, setTargetCustomer] = useState("");
+  if (!isOpen) return null;
+
+  return (
+    <IdeaModalContent
+      key={ideaToEdit?.id ?? "new-idea"}
+      onClose={onClose}
+      ideaToEdit={ideaToEdit}
+    />
+  );
+}
+
+interface IdeaModalContentProps {
+  onClose: () => void;
+  ideaToEdit?: Idea | null;
+}
+
+function IdeaModalContent({ onClose, ideaToEdit }: IdeaModalContentProps) {
+  const [name, setName] = useState(() => ideaToEdit?.name ?? "");
+  const [description, setDescription] = useState(() => ideaToEdit?.description ?? "");
+  const [targetCustomer, setTargetCustomer] = useState(
+    () => ideaToEdit?.target_customer ?? ""
+  );
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const isEditMode = Boolean(ideaToEdit);
-
-  useEffect(() => {
-    if (ideaToEdit) {
-      setName(ideaToEdit.name);
-      setDescription(ideaToEdit.description);
-      setTargetCustomer(ideaToEdit.target_customer);
-    } else {
-      setName("");
-      setDescription("");
-      setTargetCustomer("");
-    }
-    setError(null);
-  }, [ideaToEdit, isOpen]);
-
-  if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

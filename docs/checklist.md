@@ -56,11 +56,11 @@ RULE FOR EVERY AI AGENT / SESSION (Cursor, Antigravity, VSCode/Copilot, whoever)
 ---
 
 ## Phase 6 — Validation Dashboard (the differentiator — do not skip or de-prioritize)
-- [ ] Per-idea summary: total leads, messaged, replied, reply rate %
-- [ ] Aggregated sentiment/interest distribution across all leads for the idea
-- [ ] Recurring pain points (simple frequency list from Insights)
-- [ ] Recurring objections (same)
-- [ ] Clear verdict framing: "X/30 replied, Y/30 interested" — this is the whole point of the tool
+- [x] Per-idea summary: total leads, messaged, replied, reply rate %
+- [x] Aggregated sentiment/interest distribution across all leads for the idea
+- [x] Recurring pain points (simple frequency list from Insights)
+- [x] Recurring objections (same)
+- [x] Clear verdict framing: "X/30 replied, Y/30 interested" — this is the whole point of the tool
 
 ---
 

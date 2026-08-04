@@ -9,13 +9,16 @@ import { IdeaModal } from "@/components/idea-modal";
 import { IdeasManagerModal } from "@/components/ideas-manager-modal";
 import { AddLeadModal } from "@/components/add-lead-modal";
 import { LeadsList } from "@/components/leads-list";
+import { ValidationDashboard } from "@/components/validation-dashboard";
 import { LogOut } from "lucide-react";
+import type { IdeaDashboardData } from "@/types/dashboard";
 
 interface DashboardViewProps {
   userEmail: string;
   ideas: Idea[];
   selectedIdeaId: string | null;
   leads: Lead[];
+  dashboard: IdeaDashboardData | null;
 }
 
 export function DashboardView({
@@ -23,6 +26,7 @@ export function DashboardView({
   ideas,
   selectedIdeaId,
   leads,
+  dashboard,
 }: DashboardViewProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
@@ -93,6 +97,8 @@ export function DashboardView({
             onManage={() => setIsManageModalOpen(true)}
           />
         </section>
+
+        {selectedIdea && dashboard && <ValidationDashboard dashboard={dashboard} />}
 
         {/* Leads List Section */}
         {selectedIdea && (
