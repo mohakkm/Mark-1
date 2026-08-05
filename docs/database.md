@@ -10,7 +10,7 @@ even though there's currently only one user.
 | column | type | notes |
 |---|---|---|
 | id | uuid, pk | |
-| user_id | uuid | fk → auth.users, nullable for now (single user) |
+| user_id | uuid | fk -> auth.users, required; owner of the idea |
 | name | text | e.g. "Founder CRM", "Coldcall SaaS" |
 | description | text | your pitch/problem statement |
 | target_customer | text | who you're validating with |
@@ -22,7 +22,7 @@ even though there's currently only one user.
 | column | type | notes |
 |---|---|---|
 | id | uuid, pk | |
-| idea_id | uuid | fk → ideas.id, required |
+| idea_id | uuid | fk -> ideas.id, required |
 | name | text | from AI-structured paste |
 | company | text | nullable |
 | role | text | nullable |
@@ -40,7 +40,7 @@ even though there's currently only one user.
 | column | type | notes |
 |---|---|---|
 | id | uuid, pk | |
-| lead_id | uuid | fk → leads.id |
+| lead_id | uuid | fk -> leads.id |
 | type | text | enum: outgoing, incoming |
 | content | text | the message text (generated or pasted reply) |
 | created_at | timestamptz | default now() |
@@ -51,7 +51,7 @@ even though there's currently only one user.
 | column | type | notes |
 |---|---|---|
 | id | uuid, pk | |
-| lead_id | uuid | fk → leads.id |
+| lead_id | uuid | fk -> leads.id |
 | summary | text | |
 | pain_points | text[] or text | store as JSON array if easier |
 | objections | text[] or text | |
@@ -73,9 +73,15 @@ Nothing else. Do not add statuses without updating this file first.
 
 ---
 
+## Row-Level Security model
+- RLS is intended on all four tables via `supabase/migrations/002_enable_rls.sql`.
+- `ideas` rows are accessible only when `ideas.user_id = auth.uid()`.
+- `leads` rows are accessible only when their `idea_id` belongs to an idea owned by `auth.uid()`.
+- `conversations` and `insights` rows are accessible only when their `lead_id` belongs to a lead whose `idea_id` belongs to an idea owned by `auth.uid()`.
+
+---
+
 ## Notes on scaling later (do not build now)
-- Row-Level Security (RLS) policies on all four tables, keyed on `user_id`,
-  required before any second user is ever invited in. Until then `user_id`
-  columns can stay nullable/unused.
+- Multi-user auth UX, billing, and broader account management are still deferred; see `docs/checklist.md`.
 - No `enrichment`, `tags`, `lead_score` fields — explicitly out of scope, see
   checklist.md.

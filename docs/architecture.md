@@ -16,10 +16,9 @@ do not erode it later without re-reading why (see checklist "out of scope").
 - **Frontend + Backend**: Next.js (App Router) + TypeScript, deployed on Vercel
 - **Styling**: TailwindCSS
 - **DB**: Supabase (Postgres)
-- **Auth**: Supabase Auth (single user initially — no RLS complexity yet, add before
-  ever inviting a second user)
+- **Auth**: Supabase Auth (single-user app today, with idea ownership enforced through `ideas.user_id` and RLS planned/applied through project migrations before deployment)
 - **AI**: Groq API (free tier, Llama models) — used for:
-  1. Structuring pasted profile text → JSON
+  1. Structuring pasted profile text -> JSON
   2. Generating first outreach message
   3. Generating follow-up message
   4. Extracting insights from pasted reply text
@@ -28,7 +27,7 @@ do not erode it later without re-reading why (see checklist "out of scope").
   tier covers this comfortably at ~30 leads/month (~120 short calls). If
   insight-extraction quality feels weak once real replies are being processed,
   the one worthwhile upgrade is swapping just that route to Claude API
-  (Anthropic) — pay-per-token, realistically under ₹300/month at this volume.
+  (Anthropic) — pay-per-token, realistically under INR 300/month at this volume.
   Keep message-gen and profile-structuring on Groq either way; extraction
   quality is the only place worth paying for.
 
@@ -41,17 +40,17 @@ No browser extension. No headless browser. No third-party scraping API.
 1. User creates an **Idea** (name, description, target customer) — this scopes
    everything below it.
 2. User manually finds a lead on LinkedIn, copies the visible profile text block.
-3. User pastes it into "Add Lead" → backend sends raw text to Groq API →
-   gets back structured JSON (name, role, company, headline) → saved as a Lead
+3. User pastes it into "Add Lead" -> backend sends raw text to Groq API ->
+   gets back structured JSON (name, role, company, headline) -> saved as a Lead
    row, linked to the current Idea.
-4. User clicks "Generate First Message" → Groq API drafts a short outreach
-   message using the Idea's context + the Lead's profile → shown with a
+4. User clicks "Generate First Message" -> Groq API drafts a short outreach
+   message using the Idea's context + the Lead's profile -> shown with a
    copy-to-clipboard button.
 5. User pastes that message into LinkedIn themselves and sends it. The app never
    touches LinkedIn's UI or API for sending.
 6. When a reply comes in, user copies it and pastes it into the Lead's detail
-   page → Groq API extracts a summary, pain points, objections, interest
-   level → saved as an Insight row → Lead status auto-updates (e.g. "Replied").
+   page -> Groq API extracts a summary, pain points, objections, interest
+   level -> saved as an Insight row -> Lead status auto-updates (e.g. "Replied").
 7. Validation Dashboard aggregates Insights across all Leads for the current
    Idea: reply rate, interest distribution, recurring pain points/objections.
 

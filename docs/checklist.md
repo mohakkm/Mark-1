@@ -21,6 +21,7 @@ RULE FOR EVERY AI AGENT / SESSION (Cursor, Antigravity, VSCode/Copilot, whoever)
 - [x] Supabase Auth wired (single user for now — no multi-tenant RLS yet)
 - [x] Env vars (.env.local) documented in `docs/architecture.md` + `.env.local.example`
 - [x] Database schema created (see `docs/database.md`) — SQL at `supabase/migrations/001_initial_schema.sql`; apply in Supabase dashboard
+- [ ] Apply `supabase/migrations/002_enable_rls.sql` in the hosted Supabase project before deployment
 
 ---
 
@@ -33,7 +34,7 @@ RULE FOR EVERY AI AGENT / SESSION (Cursor, Antigravity, VSCode/Copilot, whoever)
 
 ## Phase 3 — Leads (manual paste-in)
 - [x] "Add Lead" UI / Modal: single textarea for pasted LinkedIn profile blob
-- [x] API route: send pasted text to Groq API → structured JSON (name, role, company, headline)
+- [x] API route: send pasted text to Groq API -> structured JSON (name, role, company, headline)
 - [x] Save structured lead to DB, linked to current idea
 - [x] Leads table view (list, search, status filter)
 - [x] Lead detail page
@@ -41,7 +42,7 @@ RULE FOR EVERY AI AGENT / SESSION (Cursor, Antigravity, VSCode/Copilot, whoever)
 ---
 
 ## Phase 4 — AI Messaging
-- [x] "Generate First Message" — uses idea context + lead profile → draft outreach (≤90 words)
+- [x] "Generate First Message" — uses idea context + lead profile -> draft outreach (<=90 words)
 - [x] Copy-to-clipboard button (message is sent manually by user on LinkedIn — never automated)
 - [x] "Generate Follow-up" — uses previous message + days elapsed + lead profile
 
@@ -49,9 +50,9 @@ RULE FOR EVERY AI AGENT / SESSION (Cursor, Antigravity, VSCode/Copilot, whoever)
 
 ## Phase 5 — Reply Capture & Insights
 - [x] "Paste Reply" textarea on lead detail page
-- [x] API route: reply text → Groq API → extract summary, pain points, objections, interest level
+- [x] API route: reply text -> Groq API -> extract summary, pain points, objections, interest level
 - [x] Store as Insight record, linked to lead
-- [x] Auto-update lead status based on reply (e.g. → "Replied")
+- [x] Auto-update lead status based on reply (e.g. -> "Replied")
 
 ---
 
@@ -87,7 +88,7 @@ RULE FOR EVERY AI AGENT / SESSION (Cursor, Antigravity, VSCode/Copilot, whoever)
 - Multi-user auth, RLS, billing — not until Phase 6 is proven on real personal use
 - Browser extension of any kind (killed in Phase 0)
 
-If it's not "paste in → AI helps me think/write → paste out", it doesn't belong in this build yet.
+If it's not "paste in -> AI helps me think/write -> paste out", it doesn't belong in this build yet.
 
 ---
 

@@ -76,6 +76,7 @@ export async function updateIdeaAction(id: string, input: Partial<IdeaInput>) {
     .from("ideas")
     .update(updates)
     .eq("id", id)
+    .eq("user_id", user.id)
     .select()
     .single();
 
@@ -97,7 +98,11 @@ export async function deleteIdeaAction(id: string) {
     throw new Error("Unauthorized");
   }
 
-  const { error } = await supabase.from("ideas").delete().eq("id", id);
+  const { error } = await supabase
+    .from("ideas")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
 
   if (error) {
     throw new Error(error.message);

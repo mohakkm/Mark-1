@@ -75,6 +75,7 @@ export async function POST(request: Request) {
     .from("ideas")
     .select("id")
     .eq("id", idea_id)
+    .eq("user_id", user.id)
     .single();
 
   if (ideaErr || !idea) {

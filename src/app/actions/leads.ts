@@ -31,6 +31,17 @@ export async function createLeadAction(input: CreateLeadInput) {
     throw new Error("Pasted profile text cannot be empty");
   }
 
+  const { data: idea, error: ideaError } = await supabase
+    .from("ideas")
+    .select("id")
+    .eq("id", input.idea_id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (ideaError || !idea) {
+    throw new Error("Selected idea not found");
+  }
+
   // Parse with Groq API
   const structured = await parseLinkedInProfileWithGroq(
     input.raw_pasted_profile.trim()

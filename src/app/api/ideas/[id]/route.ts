@@ -21,6 +21,7 @@ export async function GET(_request: Request, context: RouteContext) {
     .from("ideas")
     .select("*")
     .eq("id", id)
+    .eq("user_id", user.id)
     .single();
 
   if (error) {
@@ -82,6 +83,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     .from("ideas")
     .update(updates)
     .eq("id", id)
+    .eq("user_id", user.id)
     .select()
     .single();
 
@@ -106,7 +108,8 @@ export async function DELETE(_request: Request, context: RouteContext) {
   const { error } = await supabase
     .from("ideas")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("user_id", user.id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

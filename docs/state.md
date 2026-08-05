@@ -1,12 +1,12 @@
 # Current State (update this every session, before you stop)
 
-Last updated: 2026-08-04 — by: Codex
+Last updated: 2026-08-05 — by: Codex
 
 ## What's currently working
 - Phase 1 verified end-to-end: signup/login, Supabase connected, all four tables live
 - Next.js 16 + TypeScript + TailwindCSS scaffold at repo root
 - Supabase Auth: `/login` (sign in / sign up), `/auth/callback`, middleware session guard
-- Database migration applied: `ideas`, `leads`, `conversations`, `insights`
+- Database migration applied so far: `ideas`, `leads`, `conversations`, `insights`
 - Git remote: `https://github.com/mohakkm/Mark-1.git`
 - Phase 2 complete & verified:
   - Ideas CRUD: `/api/ideas` (GET/POST), `/api/ideas/[id]` (GET/PATCH/DELETE)
@@ -38,7 +38,7 @@ Last updated: 2026-08-04 — by: Codex
     - Follow-up uses previous outgoing conversation and `days elapsed` from `last_contact`.
     - Saves generated message to `conversations` as `type: outgoing` and updates `leads.last_contact` (and status to `messaged` when first contact).
   - `src/lib/groq.ts` now includes outreach message generation with guardrails:
-    - ≤90 words, non-empty, basic malformed/gibberish checks.
+    - <=90 words, non-empty, basic malformed/gibberish checks.
     - Explicit error surfacing when output is broken.
   - Lead detail Conversations tab now supports:
     - Generate First Message
@@ -66,37 +66,51 @@ Last updated: 2026-08-04 — by: Codex
 - Phase 6 complete & verified:
   - New shared analytics types in `src/types/dashboard.ts`.
   - New aggregate helper in `src/lib/dashboard.ts`.
-    - Computes `totalLeads`, `messagedCount`, `repliedCount`, `replyRate`, and `interestedCount` for the active idea.
-    - Reply rate is correctly calculated as `replied / messaged`.
-    - Uses the latest insight per lead for interest distribution so one lead cannot overweight the validation signal by replying multiple times.
-    - Aggregates recurring pain points and objections across all insights with case-insensitive grouping, per-insight dedupe, and descending mention count.
   - New route: `GET /api/ideas/[id]/dashboard` in `src/app/api/ideas/[id]/dashboard/route.ts`.
-    - Auth-required and ownership-scoped to the current user's idea.
-    - Returns the full validation dashboard payload for a single idea.
   - New dashboard analytics view in `src/components/validation-dashboard.tsx`.
-    - Shows top verdict framing: `X/total leads replied (Y%), Z marked interested`.
-    - Shows summary stat cards: total leads, messaged, replied, reply rate.
-    - Shows interest distribution with count/percentage and a short interpretation note.
-    - Shows ranked recurring pain points and recurring objections frequency lists.
-  - `src/app/page.tsx` now fetches idea-scoped insights for the selected idea and builds the dashboard server-side.
-  - `src/components/dashboard-view.tsx` now renders the validation dashboard above the leads list; switching the active idea updates the entire analytics block automatically through the existing idea-switcher flow.
+  - `src/app/page.tsx` builds idea-scoped dashboard analytics server-side.
+  - `src/components/dashboard-view.tsx` renders the validation dashboard above the leads list and updates it with the active idea.
   - Validation completed on 2026-08-04:
     - `npm run lint` passes.
     - `npm run build` passes.
-  - Cleanup included:
-    - `src/components/idea-modal.tsx` no longer uses synchronous `setState` inside `useEffect`; the modal form now initializes from props through keyed remounting, satisfying the current React/ESLint rule.
+- Security hardening prepared on 2026-08-05:
+  - New migration: `supabase/migrations/002_enable_rls.sql`
+    - Backfills any null `ideas.user_id` rows to the existing owner account.
+    - Sets `ideas.user_id` to `NOT NULL`.
+    - Enables RLS on `ideas`, `leads`, `conversations`, and `insights`.
+    - Adds SELECT / INSERT / UPDATE / DELETE policies enforcing `auth.uid()` ownership:
+      - direct ownership on `ideas`
+      - ownership via parent `idea_id` on `leads`
+      - ownership via `lead_id -> leads.idea_id -> ideas.user_id` on `conversations` and `insights`
+  - App-side ownership checks were tightened to match the RLS model:
+    - `src/app/api/ideas/route.ts`
+    - `src/app/api/ideas/[id]/route.ts`
+    - `src/app/actions/ideas.ts`
+    - `src/app/api/leads/route.ts`
+    - `src/app/actions/leads.ts`
+  - Remote data check completed against the hosted Supabase project:
+    - Existing `ideas.user_id` rows were checked via the Data API on 2026-08-05.
+    - Result: 3 ideas total, 0 rows with `user_id IS NULL`, so no remote backfill was needed.
 
 ## What's mid-implementation / half-done
-- None in Phase 6.
+- Hosted database security apply/verify is pending:
+  - `002_enable_rls.sql` is present in the repo but was not executed against the hosted Supabase database from this environment.
+  - As a result, hosted RLS behavior and Supabase Security Scanner clearance were not directly verified in this session.
 
 ## Known gaps (deferred, not blocking)
 - **Password reset page** — no `/forgot-password` or reset flow yet. Single-user app; founder can recover via Supabase dashboard if needed. Add before any second user.
 - **Next.js 16 warning** — the build warns that the `middleware` file convention is deprecated in favor of `proxy`; current build still succeeds.
-- **Node runtime warning** — the build on 2026-08-04 warns that future `@supabase/supabase-js` releases will require Node.js 22+; current build still succeeds on Node.js 20.
+- **Node runtime warning** — the build warns that future `@supabase/supabase-js` releases will require Node.js 22+; current build still succeeds on Node.js 20.
 
 ## What broke last session and why (so the next agent doesn't repeat it)
 - Pasting non-LinkedIn text previously allowed Groq to guess/hallucinate names ("Unknown Lead" or random webpage author). Resolved by adding strict `is_valid_profile` check and metadata presence verification in `src/lib/groq.ts`.
 - `FolderGear` icon export in `lucide-react` does not exist; replaced with `FolderCog`.
+- The current environment did not expose a usable Supabase management SQL surface:
+  - no Supabase CLI available
+  - no browser session available for dashboard automation
+  - no PAT / database password available for Management API SQL execution
 
 ## Next concrete step
-- Phase 7: Follow-up Queue (sort by `last_contact`, highlight overdue leads at 3/5/7+ days, keep the workflow manual-only).
+- Apply `supabase/migrations/002_enable_rls.sql` in the hosted Supabase project, then verify:
+  - app still works under the signed-in owner account
+  - Security Scanner no longer flags `ideas`, `leads`, `conversations`, and `insights`
