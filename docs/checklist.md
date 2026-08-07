@@ -21,6 +21,7 @@ RULE FOR EVERY AI AGENT / SESSION (Cursor, Antigravity, VSCode/Copilot, whoever)
 - [x] Supabase Auth wired (single user for now — no multi-tenant RLS yet)
 - [x] Env vars (.env.local) documented in `docs/architecture.md` + `.env.local.example`
 - [x] Database schema created (see `docs/database.md`) — SQL at `supabase/migrations/001_initial_schema.sql`; apply in Supabase dashboard
+- [x] Password reset flow: `/login` forgot-password trigger, `/auth/callback` recovery-type redirect, `/reset-password` set-new-password page (Supabase `updateUser({ password })`, redirects to `/login?reset=success` on save)
 - [ ] Apply `supabase/migrations/002_enable_rls.sql` in the hosted Supabase project before deployment
 
 ---

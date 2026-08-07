@@ -1,11 +1,24 @@
 # Current State (update this every session, before you stop)
 
-Last updated: 2026-08-05 — by: Codex
+Last updated: 2026-08-07 — by: Trae
 
 ## What's currently working
 - Phase 1 verified end-to-end: signup/login, Supabase connected, all four tables live
 - Next.js 16 + TypeScript + TailwindCSS scaffold at repo root
-- Supabase Auth: `/login` (sign in / sign up), `/auth/callback`, middleware session guard
+- Supabase Auth: `/login` (sign in / sign up / forgot password), `/auth/callback` (handles `type=recovery` redirect), `/reset-password` set-new-password page, middleware session guard
+- Password reset flow complete:
+  - `/login` "Forgot password?" → enters email-only forgot mode → calls `supabase.auth.resetPasswordForEmail` with `redirectTo=${origin}/auth/callback?type=recovery`
+  - `/auth/callback` detects `type=recovery` after `exchangeCodeForSession`, redirects to `/reset-password` (instead of "/")
+  - `/reset-password` (new route: [src/app/reset-password/page.tsx](file:///c:/Users/Mohakk/Desktop/Mark-1/src/app/reset-password/page.tsx), form: [src/app/reset-password/reset-password-form.tsx](file:///c:/Users/Mohakk/Desktop/Mark-1/src/app/reset-password/reset-password-form.tsx)):
+    - Client-side `useEffect` parses `window.location.hash` for legacy Implicit Flow `access_token` + `type=recovery`, calls `setSession` if present
+    - Falls back to checking active session (from PKCE callback redirect) via `getUser()`
+    - Renders "Verifying reset link…" loading state until session confirmed
+    - Shows set-new-password form with two fields (password + confirm password), min length 6, match validation
+    - On submit: calls `supabase.auth.updateUser({ password })`, signs out, redirects to `/login?reset=success`
+    - Invalid/expired link shows error with "Back to sign in" CTA; also shows "Cancel and return to sign in" during valid session
+  - Middleware `isAuthRoute` whitelist extended to include `/reset-password` so unauthenticated (pre-session-recovery) visitors reach it
+  - Login page shows success banner via `reset=success` query param: "Password updated. Please sign in with your new password."
+- Login/signup page light cleanup: added `py-12` vertical page padding, `mt-2` label→input spacing, `mt-8` heading→form spacing, `space-y-5` form items (up from `space-y-4`), `py-2.5` submit button (up from `py-2`), `mt-6` action buttons block, `space-y-2` between stacked action links, wrapped password label + forgot link in `flex justify-between`, added `autoComplete` hints on email/password inputs, success messages use `text-emerald-600` with `pt-1`, forgot email mode hides password field, forgot mode shows "Back to sign in" link
 - Database migration applied so far: `ideas`, `leads`, `conversations`, `insights`
 - Git remote: `https://github.com/mohakkm/Mark-1.git`
 - Phase 2 complete & verified:
@@ -98,7 +111,6 @@ Last updated: 2026-08-05 — by: Codex
   - As a result, hosted RLS behavior and Supabase Security Scanner clearance were not directly verified in this session.
 
 ## Known gaps (deferred, not blocking)
-- **Password reset page** — no `/forgot-password` or reset flow yet. Single-user app; founder can recover via Supabase dashboard if needed. Add before any second user.
 - **Next.js 16 warning** — the build warns that the `middleware` file convention is deprecated in favor of `proxy`; current build still succeeds.
 - **Node runtime warning** — the build warns that future `@supabase/supabase-js` releases will require Node.js 22+; current build still succeeds on Node.js 20.
 
