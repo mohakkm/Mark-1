@@ -1,10 +1,34 @@
 "use client";
 
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 type AuthMode = "signin" | "signup" | "forgot";
+
+function GoogleMark() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4">
+      <path
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.76h3.57c2.08-1.92 3.28-4.74 3.28-8.09Z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.76c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.84 14.1a6.6 6.6 0 0 1 0-4.22V7.04H2.18a11 11 0 0 0 0 9.9l3.66-2.84Z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.04l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38Z"
+      />
+    </svg>
+  );
+}
 
 export default function LoginForm() {
   const router = useRouter();
@@ -26,6 +50,29 @@ export default function LoginForm() {
       : null
   );
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  async function handleGoogleSignIn() {
+    setError(null);
+    setSuccessMsg(null);
+    setGoogleLoading(true);
+
+    const supabase = createClient();
+    const origin =
+      typeof window !== "undefined" ? window.location.origin : "";
+
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${origin}/auth/callback`,
+      },
+    });
+
+    setGoogleLoading(false);
+    if (oauthError) {
+      setError(oauthError.message);
+    }
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -56,6 +103,20 @@ export default function LoginForm() {
       return;
     }
 
+    if (
+      mode === "signup" &&
+      (password.length < 6 ||
+        !/[a-z]/.test(password) ||
+        !/[A-Z]/.test(password) ||
+        !/[0-9]/.test(password))
+    ) {
+      setLoading(false);
+      setError(
+        "Password must include at least one lowercase letter, one uppercase letter, and one number."
+      );
+      return;
+    }
+
     const { error: authErrorResult } =
       mode === "signin"
         ? await supabase.auth.signInWithPassword({ email, password })
@@ -72,12 +133,19 @@ export default function LoginForm() {
     router.refresh();
   }
 
-  const heading =
+  const heroH1 =
     mode === "signin"
-      ? "Sign in to continue"
+      ? "Welcome back"
       : mode === "signup"
         ? "Create your account"
         : "Reset your password";
+
+  const heroSub =
+    mode === "signin"
+      ? "Sign in to pick up where your ideas left off."
+      : mode === "signup"
+        ? "Start running structured validation outreach in minutes."
+        : "Enter your email and we&apos;ll send you a reset link.";
 
   const submitLabel =
     mode === "signin"
@@ -86,124 +154,189 @@ export default function LoginForm() {
         ? "Sign up"
         : "Send reset link";
 
-  return (
-    <div className="flex flex-1 items-center justify-center bg-zinc-50 px-4 py-12">
-      <div className="w-full max-w-sm rounded-lg border border-zinc-200 bg-white p-8 shadow-sm">
-        <h1 className="text-xl font-semibold text-zinc-900">
-          Idea Validation CRM
-        </h1>
-        <p className="mt-2 text-sm text-zinc-500">{heading}</p>
+  const footerLabel =
+    mode === "signin"
+      ? "Need an account?"
+      : mode === "signup"
+        ? "Already have an account?"
+        : "Remembered it?";
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-zinc-700"
+  const footerCta =
+    mode === "signin"
+      ? "Sign up"
+      : mode === "signup"
+        ? "Sign in"
+        : "Back to sign in";
+
+  const switchMode = () => {
+    setError(null);
+    setSuccessMsg(null);
+    setPassword("");
+    if (mode === "forgot") {
+      setMode("signin");
+    } else {
+      setMode((m) => (m === "signin" ? "signup" : "signin"));
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <header className="border-b border-border">
+        <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-5 md:px-8">
+          <Link href="/" className="flex items-center gap-2">
+            <span
+              className="grid size-6 place-items-center rounded-sm bg-primary text-primary-foreground"
+              aria-hidden="true"
             >
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-2 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+              <span className="font-serif text-sm leading-none">M</span>
+            </span>
+            <span className="text-sm font-semibold tracking-tight text-foreground">
+              Mark-1
+            </span>
+          </Link>
+          <Link
+            href="/"
+            className="rounded-sm px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Back to home
+          </Link>
+        </div>
+      </header>
+
+      <main className="flex flex-1 items-center justify-center px-5 py-16 md:px-8">
+        <div className="animate-rise w-full max-w-sm">
+          <div className="mb-8 text-center">
+            <h1 className="text-balance font-serif text-4xl leading-[1.1] tracking-tight text-foreground">
+              {heroH1}
+            </h1>
+            <p
+              className="mt-3 text-sm leading-relaxed text-muted-foreground"
+              dangerouslySetInnerHTML={{ __html: heroSub }}
             />
           </div>
 
-          {mode !== "forgot" && (
-            <div>
-              <div className="flex items-center justify-between">
+          <div className="rounded-sm border border-border bg-card p-6">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
                 <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-zinc-700"
+                  htmlFor="email"
+                  className="text-xs font-medium text-foreground"
                 >
-                  Password
+                  Email
                 </label>
-                {mode === "signin" && (
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@company.com"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="h-9 rounded-sm border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-ring focus:ring-1 focus:ring-ring"
+                />
+              </div>
+
+              {mode !== "forgot" && (
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-baseline justify-between">
+                    <label
+                      htmlFor="password"
+                      className="text-xs font-medium text-foreground"
+                    >
+                      Password
+                    </label>
+                    {mode === "signin" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMode("forgot");
+                          setError(null);
+                          setSuccessMsg(null);
+                          setPassword("");
+                        }}
+                        className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        Forgot?
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    id="password"
+                    type="password"
+                    minLength={6}
+                    autoComplete={
+                      mode === "signin" ? "current-password" : "new-password"
+                    }
+                    placeholder="••••••••"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-9 rounded-sm border border-border bg-background px-3 text-sm text-foreground caret-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-ring focus:ring-1 focus:ring-ring"
+                  />
+                </div>
+              )}
+
+              {error && (
+                <p className="pt-1 text-sm text-destructive" role="alert">
+                  {error}
+                </p>
+              )}
+
+              {successMsg && (
+                <p
+                  className="pt-1 text-sm text-positive"
+                  role="status"
+                >
+                  {successMsg}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="mt-1 inline-flex h-9 items-center justify-center rounded-sm bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+              >
+                {loading ? "Please wait…" : submitLabel}
+              </button>
+            </form>
+
+            {mode !== "forgot" && (
+              <>
+                <div className="my-5 flex items-center gap-3">
+                  <span className="h-px flex-1 bg-border" />
+                  <span className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
+                    or
+                  </span>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+
+                <div className="flex flex-col gap-2.5">
                   <button
                     type="button"
-                    onClick={() => {
-                      setMode("forgot");
-                      setError(null);
-                      setSuccessMsg(null);
-                      setPassword("");
-                    }}
-                    className="text-xs font-medium text-zinc-500 hover:text-zinc-700"
+                    onClick={handleGoogleSignIn}
+                    disabled={googleLoading || loading}
+                    className="inline-flex h-9 items-center justify-center gap-2.5 rounded-sm border border-border bg-background px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
                   >
-                    Forgot password?
+                    <GoogleMark />
+                    {googleLoading ? "Connecting…" : "Sign in with Google"}
                   </button>
-                )}
-              </div>
-              <input
-                id="password"
-                type="password"
-                required
-                minLength={6}
-                autoComplete={
-                  mode === "signin" ? "current-password" : "new-password"
-                }
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-2 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
-              />
-            </div>
-          )}
+                </div>
+              </>
+            )}
+          </div>
 
-          {error && (
-            <p className="pt-1 text-sm text-red-600" role="alert">
-              {error}
-            </p>
-          )}
-
-          {successMsg && (
-            <p className="pt-1 text-sm text-emerald-600" role="status">
-              {successMsg}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-2 w-full rounded-md bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
-          >
-            {loading ? "Please wait…" : submitLabel}
-          </button>
-        </form>
-
-        <div className="mt-6 space-y-2">
-          {mode !== "forgot" && (
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            {footerLabel}{" "}
             <button
               type="button"
-              onClick={() => {
-                setMode((m) => (m === "signin" ? "signup" : "signin"));
-                setError(null);
-                setSuccessMsg(null);
-              }}
-              className="w-full text-sm text-zinc-500 hover:text-zinc-700"
+              onClick={switchMode}
+              className="font-medium text-primary underline-offset-4 hover:underline"
             >
-              {mode === "signin"
-                ? "Need an account? Sign up"
-                : "Already have an account? Sign in"}
+              {footerCta}
             </button>
-          )}
-          {mode === "forgot" && (
-            <button
-              type="button"
-              onClick={() => {
-                setMode("signin");
-                setError(null);
-                setSuccessMsg(null);
-              }}
-              className="w-full text-sm text-zinc-500 hover:text-zinc-700"
-            >
-              Back to sign in
-            </button>
-          )}
+          </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
