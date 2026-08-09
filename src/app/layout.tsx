@@ -19,7 +19,7 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Mark-1 — Idea Validation",
+  title: "Verdict — Idea Validation",
   description:
     "Track outreach and validate startup ideas. Reply rates, pain points, and objections at a glance.",
 };

@@ -20,6 +20,93 @@ function getVerdictTone(replyRate: number, interestedCount: number) {
   return "Validation still weak";
 }
 
+function StatCard({
+  label,
+  value,
+  sub,
+  index,
+}: {
+  label: string;
+  value: string | number;
+  sub: string;
+  index: number;
+}) {
+  return (
+    <div
+      className="animate-rise border-l border-border pl-4 first:border-l-0 first:pl-0 sm:border-l sm:pl-4 sm:first:border-l"
+      style={{ animationDelay: `${60 + index * 50}ms` }}
+    >
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-2 font-serif text-3xl tracking-tight text-foreground tabular-nums">
+        {value}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
+    </div>
+  );
+}
+
+function RankedPanel({
+  title,
+  caption,
+  items,
+  tone,
+  delay = 0,
+}: {
+  title: string;
+  caption: string;
+  items: Array<{ label: string; count: number; percentage?: number }>;
+  tone: "primary" | "muted";
+  delay?: number;
+}) {
+  const max = Math.max(...items.map((i) => i.count), 1);
+  const barColor = tone === "primary" ? "bg-primary" : "bg-foreground/35";
+
+  return (
+    <section
+      className="animate-rise rounded-md border border-border bg-card"
+      style={{ animationDelay: `${delay}ms` }}
+      aria-label={title}
+    >
+      <div className="flex items-baseline justify-between border-b border-border px-5 py-3.5">
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+        <span className="text-xs text-muted-foreground">{caption}</span>
+      </div>
+      <ol className="divide-y divide-border">
+        {items.map((item, i) => {
+          const pct = (item.count / max) * 100;
+          return (
+            <li
+              key={item.label}
+              className="group grid grid-cols-[1.25rem_1fr_2rem] items-center gap-3 px-5 py-3 transition-colors hover:bg-secondary/60"
+            >
+              <span className="text-xs tabular-nums text-muted-foreground">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm text-foreground">{item.label}</p>
+                <div
+                  className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-secondary"
+                  role="presentation"
+                >
+                  <div
+                    className={`h-full rounded-full ${barColor}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+              <span className="text-right text-sm tabular-nums text-foreground">
+                {item.count}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
 export function ValidationDashboard({ dashboard }: ValidationDashboardProps) {
   const {
     totalLeads,
@@ -34,147 +121,78 @@ export function ValidationDashboard({ dashboard }: ValidationDashboardProps) {
     objectionFrequency,
   } = dashboard;
 
+  const replyRatePercent = Math.round((repliedCount / totalLeads) * 100);
+  const messagedRate = messagedCount > 0 ? Math.round((messagedCount / totalLeads) * 100) : 0;
+  const repliedRate = messagedCount > 0 ? Math.round((repliedCount / messagedCount) * 100) : 0;
+  const interestedRate = repliedCount > 0 ? Math.round((interestedCount / repliedCount) * 100) : 0;
+
   return (
-    <section className="space-y-4">
-      <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-xs">
-        <div className="space-y-1">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
-            Validation Verdict
-          </div>
-          <h2 className="text-xl font-semibold tracking-tight text-zinc-950">
-            {repliedCount}/{totalLeads} leads replied ({formatPercent(replyRate)}),{" "}
-            {interestedCount} marked interested
-          </h2>
-          <p className="text-sm text-zinc-600">
-            {getVerdictTone(replyRate, interestedCount)} for this idea based on the current outreach set.
-          </p>
-        </div>
+    <section className="space-y-6">
+      {/* Verdict Hero */}
+      <div className="animate-rise" aria-label="Validation verdict">
+        <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+          Validation · Verdict
+        </p>
+        <h1 className="mt-3 font-serif text-4xl leading-[1.1] tracking-tight text-balance text-foreground md:text-5xl">
+          {repliedCount}/{totalLeads} replied
+          <span className="text-muted-foreground"> · </span>
+          <span className="text-primary">{replyRatePercent}% reply rate</span>
+          <span className="text-muted-foreground"> · </span>
+          {interestedCount} interested
+        </h1>
+        <p className="mt-4 max-w-xl text-pretty text-sm leading-relaxed text-muted-foreground">
+          {getVerdictTone(replyRate, interestedCount)} for this idea based on the current outreach set.
+        </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-xs">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
-            Total Leads
-          </div>
-          <div className="mt-2 text-2xl font-semibold text-zinc-950">{totalLeads}</div>
-        </div>
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-xs">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
-            Messaged
-          </div>
-          <div className="mt-2 text-2xl font-semibold text-zinc-950">{messagedCount}</div>
-        </div>
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-xs">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
-            Replied
-          </div>
-          <div className="mt-2 text-2xl font-semibold text-zinc-950">{repliedCount}</div>
-        </div>
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-xs">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
-            Reply Rate
-          </div>
-          <div className="mt-2 text-2xl font-semibold text-zinc-950">{formatPercent(replyRate)}</div>
-          <div className="mt-1 text-xs text-zinc-500">Replied / messaged</div>
-        </div>
+      {/* Stat Cards */}
+      <div
+        aria-label="Pipeline stats"
+        className="animate-rise grid grid-cols-2 gap-y-6 gap-x-4 rounded-md border border-border bg-card p-5 md:grid-cols-4"
+        style={{ animationDelay: "60ms" }}
+      >
+        <StatCard
+          label="Total leads"
+          value={totalLeads}
+          sub="in this pipeline"
+          index={0}
+        />
+        <StatCard
+          label="Messaged"
+          value={messagedCount}
+          sub={`${messagedRate}% of leads`}
+          index={1}
+        />
+        <StatCard
+          label="Replied"
+          value={repliedCount}
+          sub={`${repliedRate}% of messaged`}
+          index={2}
+        />
+        <StatCard
+          label="Interested"
+          value={interestedCount}
+          sub={`${interestedRate}% of replies`}
+          index={3}
+        />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-3">
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-xs xl:col-span-1">
-          <div className="space-y-1">
-            <h3 className="text-sm font-semibold text-zinc-950">Interest distribution</h3>
-            <p className="text-xs text-zinc-500">
-              Based on the latest insight for each replied lead. {leadsWithInsightsCount} leads with insight, {totalInsightsCount} total insight records.
-            </p>
-          </div>
-
-          <div className="mt-4 space-y-3">
-            {interestDistribution.map((item) => (
-              <div key={item.level} className="space-y-1.5">
-                <div className="flex items-center justify-between text-sm text-zinc-700">
-                  <span className="capitalize">{item.level}</span>
-                  <span>
-                    {item.count} ({formatPercent(item.percentage)})
-                  </span>
-                </div>
-                <div className="h-2 rounded-full bg-zinc-100">
-                  <div
-                    className="h-2 rounded-full bg-amber-600"
-                    style={{ width: `${Math.min(item.percentage, 100)}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-4 rounded-lg bg-zinc-50 p-3 text-xs text-zinc-600">
-            {leadsWithInsightsCount === 0
-              ? "No reply insights yet. Capture replies before reading validation signal."
-              : interestDistribution[2].count > interestDistribution[0].count
-                ? "High-interest replies currently outnumber low-interest replies."
-                : interestDistribution[2].count === 0
-                  ? "No high-interest replies captured yet."
-                  : "High-interest replies exist, but low-interest replies are still larger or tied."}
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-xs">
-          <div className="space-y-1">
-            <h3 className="text-sm font-semibold text-zinc-950">Recurring pain points</h3>
-            <p className="text-xs text-zinc-500">
-              Most-mentioned themes across all insight records for this idea.
-            </p>
-          </div>
-
-          <div className="mt-4">
-            {painPointFrequency.length === 0 ? (
-              <p className="text-sm text-zinc-500">No pain points extracted yet.</p>
-            ) : (
-              <ul className="space-y-2">
-                {painPointFrequency.map((item) => (
-                  <li
-                    key={item.label}
-                    className="flex items-start justify-between gap-3 border-b border-zinc-100 pb-2 text-sm last:border-b-0 last:pb-0"
-                  >
-                    <span className="text-zinc-800">{item.label}</span>
-                    <span className="shrink-0 text-xs text-zinc-500">
-                      {item.count} mentions ({formatPercent(item.percentage)})
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-xs">
-          <div className="space-y-1">
-            <h3 className="text-sm font-semibold text-zinc-950">Recurring objections</h3>
-            <p className="text-xs text-zinc-500">
-              Most-mentioned pushbacks across all insight records for this idea.
-            </p>
-          </div>
-
-          <div className="mt-4">
-            {objectionFrequency.length === 0 ? (
-              <p className="text-sm text-zinc-500">No objections extracted yet.</p>
-            ) : (
-              <ul className="space-y-2">
-                {objectionFrequency.map((item) => (
-                  <li
-                    key={item.label}
-                    className="flex items-start justify-between gap-3 border-b border-zinc-100 pb-2 text-sm last:border-b-0 last:pb-0"
-                  >
-                    <span className="text-zinc-800">{item.label}</span>
-                    <span className="shrink-0 text-xs text-zinc-500">
-                      {item.count} mentions ({formatPercent(item.percentage)})
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
+      {/* Ranked Panels */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <RankedPanel
+          title="Top pain points"
+          caption="mentions"
+          items={painPointFrequency}
+          tone="primary"
+          delay={180}
+        />
+        <RankedPanel
+          title="Top objections"
+          caption="mentions"
+          items={objectionFrequency}
+          tone="muted"
+          delay={220}
+        />
       </div>
     </section>
   );

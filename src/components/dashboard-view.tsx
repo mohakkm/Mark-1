@@ -45,21 +45,20 @@ export function DashboardView({
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-50 font-sans antialiased">
+    <div className="flex min-h-screen flex-col bg-background font-sans antialiased">
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/95 backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-600 text-white font-bold text-base shadow-xs">
-                M
-              </div>
-              <span className="font-bold text-zinc-900 text-base tracking-tight hidden sm:inline">
-                Mark-1 CRM
-              </span>
+            <div className="flex items-center">
+              <img
+                src="/verdict-logo.png"
+                alt="Verdict"
+                className="h-10 w-auto object-contain mix-blend-multiply"
+              />
             </div>
 
-            <div className="h-5 w-px bg-zinc-200 hidden sm:block" />
+            <div className="h-5 w-px bg-border hidden sm:block" />
 
             <IdeaSwitcher
               ideas={ideas}
@@ -70,15 +69,15 @@ export function DashboardView({
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-xs text-zinc-500 hidden md:inline truncate max-w-[180px]">
+            <span className="text-xs text-muted-foreground hidden md:inline truncate max-w-[180px]">
               {userEmail}
             </span>
             <form action="/auth/signout" method="post">
               <button
                 type="submit"
-                className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
               >
-                <LogOut className="h-3.5 w-3.5 text-zinc-400" />
+                <LogOut className="h-3.5 w-3.5 text-muted-foreground" />
                 Sign out
               </button>
             </form>
@@ -87,7 +86,7 @@ export function DashboardView({
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-8 sm:px-6 space-y-8">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col bg-muted/40 px-5 pb-20 pt-10 md:px-8 md:pt-14 space-y-8">
         {/* Selected Idea Section */}
         <section>
           <IdeaDetailsCard

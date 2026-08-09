@@ -183,16 +183,12 @@ export default function LoginForm() {
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b border-border">
         <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-5 md:px-8">
-          <Link href="/" className="flex items-center gap-2">
-            <span
-              className="grid size-6 place-items-center rounded-sm bg-primary text-primary-foreground"
-              aria-hidden="true"
-            >
-              <span className="font-serif text-sm leading-none">M</span>
-            </span>
-            <span className="text-sm font-semibold tracking-tight text-foreground">
-              Mark-1
-            </span>
+          <Link href="/" className="flex items-center">
+            <img
+              src="/verdict-logo.png"
+              alt="Verdict"
+              className="h-10 w-auto object-contain mix-blend-multiply"
+            />
           </Link>
           <Link
             href="/"
