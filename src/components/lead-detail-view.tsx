@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { Lead, LeadStatus, Conversation, Insight } from "@/types/lead";
 import type { Idea } from "@/types/idea";
 import { updateLeadStatusAction, deleteLeadAction } from "@/app/actions/leads";
+import { SiteFooter, appFooterLinks } from "@/components/site-footer";
 import { formatUtcDayMonthYear, formatUtcDayMonthYearTime } from "@/lib/date-format";
 import {
   ArrowLeft,
@@ -642,6 +643,8 @@ export function LeadDetailView({
           </div>
         )}
       </main>
+
+      <SiteFooter links={appFooterLinks} />
     </div>
   );
 }

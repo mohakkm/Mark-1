@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { parseLinkedInProfileWithGroq } from "@/lib/groq";
 import type { CreateLeadInput } from "@/types/lead";
+import { checkLeadsLimit } from "@/lib/limits";
 
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -80,6 +81,14 @@ export async function POST(request: Request) {
 
   if (ideaErr || !idea) {
     return NextResponse.json({ error: "Selected idea not found" }, { status: 404 });
+  }
+
+  // Check usage limits
+  try {
+    await checkLeadsLimit(supabase, idea_id);
+  } catch (limitErr: unknown) {
+    const message = limitErr instanceof Error ? limitErr.message : "Lead limit reached";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 
   // Extract structured lead via Groq API

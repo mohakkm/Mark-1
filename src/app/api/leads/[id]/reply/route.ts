@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { extractReplyInsightWithGroq } from "@/lib/groq";
 import type { Lead, Insight } from "@/types/lead";
+import { checkAiLimit, recordAiAction } from "@/lib/limits";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -16,6 +17,14 @@ export async function POST(request: Request, context: RouteContext) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Check usage limits
+  try {
+    await checkAiLimit(supabase, user.id);
+  } catch (limitErr: unknown) {
+    const message = limitErr instanceof Error ? limitErr.message : "AI usage limit reached";
+    return NextResponse.json({ error: message }, { status: 403 });
   }
 
   let body: { reply_text?: string };
@@ -55,6 +64,8 @@ export async function POST(request: Request, context: RouteContext) {
   let extracted;
   try {
     extracted = await extractReplyInsightWithGroq(replyText);
+    // Record AI usage log
+    await recordAiAction(supabase, user.id, "insight_extraction");
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to extract insight.";
     return NextResponse.json({ error: message }, { status: 400 });

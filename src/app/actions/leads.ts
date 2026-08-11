@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { parseLinkedInProfileWithGroq } from "@/lib/groq";
 import { revalidatePath } from "next/cache";
 import type { CreateLeadInput, LeadStatus } from "@/types/lead";
+import { checkLeadsLimit } from "@/lib/limits";
 
 const VALID_STATUSES: LeadStatus[] = [
   "not_contacted",
@@ -41,6 +42,9 @@ export async function createLeadAction(input: CreateLeadInput) {
   if (ideaError || !idea) {
     throw new Error("Selected idea not found");
   }
+
+  // Check usage limits
+  await checkLeadsLimit(supabase, input.idea_id);
 
   // Parse with Groq API
   const structured = await parseLinkedInProfileWithGroq(

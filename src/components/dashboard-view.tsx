@@ -10,6 +10,7 @@ import { IdeasManagerModal } from "@/components/ideas-manager-modal";
 import { AddLeadModal } from "@/components/add-lead-modal";
 import { LeadsList } from "@/components/leads-list";
 import { ValidationDashboard } from "@/components/validation-dashboard";
+import { SiteFooter } from "@/components/site-footer";
 import { LogOut } from "lucide-react";
 import type { IdeaDashboardData } from "@/types/dashboard";
 
@@ -111,6 +112,8 @@ export function DashboardView({
           </section>
         )}
       </main>
+
+      <SiteFooter />
 
       {/* Modals */}
       <IdeaModal

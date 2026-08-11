@@ -8,6 +8,7 @@ import type { Lead } from "@/types/lead";
 import type { DashboardInsightInput, IdeaDashboardData } from "@/types/dashboard";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { SiteFooter, landingFooterLinks } from "@/components/site-footer";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -17,7 +18,7 @@ export default async function Home() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="flex min-h-screen flex-col bg-background">
         {/* minimal top bar — brand only, matching the app chrome */}
         <header className="border-b border-border">
           <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-5 md:px-8">
@@ -37,8 +38,8 @@ export default async function Home() {
           </div>
         </header>
 
-        <main className="mx-auto max-w-4xl px-5 md:px-8">
-          <section className="animate-rise flex min-h-[calc(100vh-3.5rem)] flex-col justify-center py-20">
+        <main className="mx-auto flex-1 max-w-4xl px-5 md:px-8">
+          <section className="animate-rise flex flex-col justify-center py-20">
             <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
               Idea validation, not sales automation
             </p>
@@ -72,7 +73,7 @@ export default async function Home() {
             </div>
 
             {/* How it works */}
-            <div className="mt-16 border-t border-border pt-8">
+            <div id="how-it-works" className="mt-16 border-t border-border pt-8 scroll-mt-20">
               <h2 className="font-serif text-2xl text-foreground md:text-3xl">
                 How it works
               </h2>
@@ -126,6 +127,8 @@ export default async function Home() {
             </dl>
           </section>
         </main>
+
+        <SiteFooter links={landingFooterLinks} />
       </div>
     );
   }

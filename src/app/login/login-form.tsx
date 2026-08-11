@@ -4,6 +4,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { SiteFooter } from "@/components/site-footer";
 
 type AuthMode = "signin" | "signup" | "forgot";
 
@@ -333,6 +334,10 @@ export default function LoginForm() {
           </p>
         </div>
       </main>
+
+      <SiteFooter
+        links={[{ label: "Back to home", href: "/" }]}
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { generateOutreachMessageWithGroq } from "@/lib/groq";
 import type { Lead, Conversation } from "@/types/lead";
 import type { Idea } from "@/types/idea";
+import { checkAiLimit, recordAiAction } from "@/lib/limits";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -34,6 +35,14 @@ export async function POST(request: Request, context: RouteContext) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Check usage limits
+  try {
+    await checkAiLimit(supabase, user.id);
+  } catch (limitErr: unknown) {
+    const message = limitErr instanceof Error ? limitErr.message : "AI usage limit reached";
+    return NextResponse.json({ error: message }, { status: 403 });
   }
 
   let body: { type?: MessageType };
@@ -128,6 +137,8 @@ export async function POST(request: Request, context: RouteContext) {
       previousMessage: previousOutgoingMessage,
       daysElapsed,
     });
+    // Record AI usage log
+    await recordAiAction(supabase, user.id, "message_generation");
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : "Failed to generate outreach message.";
