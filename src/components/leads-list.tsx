@@ -16,6 +16,7 @@ import {
   Filter,
   ArrowUpRight,
 } from "lucide-react";
+import { LEADS_PER_IDEA_LIMIT } from "@/lib/limits";
 
 interface LeadsListProps {
   leads: Lead[];
@@ -112,10 +113,12 @@ export function LeadsList({
 
         <button
           onClick={onOpenAddModal}
-          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-amber-700 transition-colors shadow-xs"
+          disabled={leads.length >= LEADS_PER_IDEA_LIMIT}
+          title={leads.length >= LEADS_PER_IDEA_LIMIT ? `Lead limit reached (${LEADS_PER_IDEA_LIMIT}/${LEADS_PER_IDEA_LIMIT})` : undefined}
+          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-amber-700 transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus className="h-4 w-4" />
-          Add Lead
+          {leads.length >= LEADS_PER_IDEA_LIMIT ? "Limit Reached" : "Add Lead"}
         </button>
       </div>
 

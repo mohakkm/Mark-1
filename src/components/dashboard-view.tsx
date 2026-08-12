@@ -137,6 +137,7 @@ export function DashboardView({
           onClose={() => setIsAddLeadModalOpen(false)}
           ideaId={selectedIdea.id}
           ideaName={selectedIdea.name}
+          existingLeadsCount={leads.length}
         />
       )}
     </div>

@@ -1,7 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 
 export const LEADS_PER_IDEA_LIMIT = Number(
-  process.env.LEADS_PER_IDEA_LIMIT || process.env.NEXT_PUBLIC_LEADS_PER_IDEA_LIMIT || 30
+  process.env.LEADS_PER_IDEA_LIMIT || process.env.NEXT_PUBLIC_LEADS_PER_IDEA_LIMIT || 5
 );
 
 export const MONTHLY_AI_LIMIT = Number(

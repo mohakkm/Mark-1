@@ -3,12 +3,14 @@
 import { useState, useTransition } from "react";
 import { createLeadAction } from "@/app/actions/leads";
 import { X, Sparkles, Loader2, AlertCircle } from "lucide-react";
+import { LEADS_PER_IDEA_LIMIT } from "@/lib/limits";
 
 interface AddLeadModalProps {
   isOpen: boolean;
   onClose: () => void;
   ideaId: string;
   ideaName: string;
+  existingLeadsCount: number;
 }
 
 export function AddLeadModal({
@@ -16,6 +18,7 @@ export function AddLeadModal({
   onClose,
   ideaId,
   ideaName,
+  existingLeadsCount,
 }: AddLeadModalProps) {
   const [rawText, setRawText] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
@@ -23,10 +26,16 @@ export function AddLeadModal({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  const limitReached = existingLeadsCount >= LEADS_PER_IDEA_LIMIT;
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (limitReached) {
+      setError(`You have reached the limit of ${LEADS_PER_IDEA_LIMIT} leads for this idea. Please delete some leads to add new ones.`);
+      return;
+    }
     if (!rawText.trim()) {
       setError("Please paste profile text before submitting.");
       return;
@@ -76,10 +85,14 @@ export function AddLeadModal({
           </p>
         </div>
 
-        {error && (
+        {(limitReached || error) && (
           <div className="mb-4 flex items-start gap-2 rounded-lg bg-red-50 p-3 text-xs text-red-700 border border-red-200">
             <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-            <div className="flex-1">{error}</div>
+            <div className="flex-1">
+              {limitReached 
+                ? `You have reached the limit of ${LEADS_PER_IDEA_LIMIT} leads for this idea. Please delete some leads to add new ones.` 
+                : error}
+            </div>
           </div>
         )}
 
@@ -93,8 +106,9 @@ export function AddLeadModal({
               placeholder="Select all profile text on LinkedIn (Name, Headline, About, Experience) and paste it here..."
               value={rawText}
               onChange={(e) => setRawText(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 p-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono text-xs"
-              required
+              disabled={limitReached || isPending}
+              className="w-full rounded-lg border border-zinc-300 p-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono text-xs disabled:opacity-50 disabled:bg-zinc-50"
+              required={!limitReached}
             />
           </div>
 
@@ -108,7 +122,8 @@ export function AddLeadModal({
                 placeholder="https://linkedin.com/in/..."
                 value={linkedinUrl}
                 onChange={(e) => setLinkedinUrl(e.target.value)}
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-amber-500 focus:outline-none"
+                disabled={limitReached || isPending}
+                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-amber-500 focus:outline-none disabled:opacity-50 disabled:bg-zinc-50"
               />
             </div>
 
@@ -121,7 +136,8 @@ export function AddLeadModal({
                 placeholder="e.g. Met on Twitter, Mutual connection"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-amber-500 focus:outline-none"
+                disabled={limitReached || isPending}
+                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-amber-500 focus:outline-none disabled:opacity-50 disabled:bg-zinc-50"
               />
             </div>
           </div>
@@ -137,13 +153,13 @@ export function AddLeadModal({
             </button>
             <button
               type="submit"
-              disabled={isPending || !rawText.trim()}
+              disabled={isPending || !rawText.trim() || limitReached}
               className="flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 transition-colors disabled:opacity-50"
             >
               {isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Extracting with Groq...
+                  Extracting...
                 </>
               ) : (
                 <>
