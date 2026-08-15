@@ -68,7 +68,7 @@ export default async function Home() {
                 />
               </Link>
               <span className="text-xs text-muted-foreground">
-                No credit card — pre-launch access
+                Pre-launch access
               </span>
             </div>
 
