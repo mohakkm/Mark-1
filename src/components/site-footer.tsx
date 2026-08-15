@@ -42,9 +42,21 @@ export function SiteFooter({ links }: SiteFooterProps) {
           )}
         </div>
 
-        <p className="mt-6 border-t border-border pt-4 text-[11px] text-muted-foreground">
-          © 2026 Verdict.
-        </p>
+        <div className="mt-6 border-t border-border pt-4 space-y-1.5">
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            Verdict doesn&apos;t automate LinkedIn or send anything on your behalf. Your data stays yours.
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            Questions?{" "}
+            <a
+              href="mailto:mohakkmalvankar1104@gmail.com"
+              className="underline underline-offset-2 transition-colors hover:text-foreground"
+            >
+              mohakkmalvankar1104@gmail.com
+            </a>
+          </p>
+          <p className="text-[11px] text-muted-foreground/60">© 2026 Verdict.</p>
+        </div>
       </div>
     </footer>
   );
