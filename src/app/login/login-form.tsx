@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { SiteFooter } from "@/components/site-footer";
+import { checkInviteAction } from "@/app/actions/invite";
 
 type AuthMode = "signin" | "signup" | "forgot";
 
@@ -43,7 +44,9 @@ export default function LoginForm() {
   const [error, setError] = useState<string | null>(
     authError === "auth_callback_failed"
       ? "Authentication failed. Please try again."
-      : null
+      : authError === "not_invited"
+        ? "Verdict is currently invite-only. Request access and we\u2019ll add you."
+        : null
   );
   const [successMsg, setSuccessMsg] = useState<string | null>(
     resetSuccess === "success"
@@ -116,6 +119,16 @@ export default function LoginForm() {
         "Password must include at least one lowercase letter, one uppercase letter, and one number."
       );
       return;
+    }
+
+    // --- Invite gate (signup only, email/password path) ---
+    if (mode === "signup") {
+      const invite = await checkInviteAction(email);
+      if (!invite.allowed) {
+        setLoading(false);
+        setError(invite.message ?? "Signup is currently invite-only.");
+        return;
+      }
     }
 
     const { error: authErrorResult } =
@@ -315,7 +328,7 @@ export default function LoginForm() {
                     className="inline-flex h-9 items-center justify-center gap-2.5 rounded-sm border border-border bg-background px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
                   >
                     <GoogleMark />
-                    {googleLoading ? "Connecting…" : "Sign in with Google"}
+                    {googleLoading ? "Connecting…" : "Continue with Google"}
                   </button>
                 </div>
               </>

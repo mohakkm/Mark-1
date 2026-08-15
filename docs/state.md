@@ -1,8 +1,15 @@
 # Current State (update this every session, before you stop)
 
-Last updated: 2026-08-07 — by: Trae
+Last updated: 2026-08-15 — by: Antigravity
 
 ## What's currently working
+- **Invite-only signup gating** (added 2026-08-15):
+  - `public.allowed_emails` table (email PK, added_at, note) — managed via Supabase Table Editor
+  - Email/password signup: blocked pre-creation via `checkInviteAction` Server Action → `src/lib/invite-check.ts` (service-role admin client, bypasses RLS)
+  - Google OAuth and all future OAuth providers: blocked post-`exchangeCodeForSession` in `/auth/callback`; uninvited user is signed out and deleted via `admin.auth.admin.deleteUser()`; redirected to `/login?error=not_invited`
+  - Existing users backfilled into `allowed_emails` by migration `005_invite_only.sql`
+  - Error message: "Verdict is currently invite-only. Request access and we'll add you."
+- **`src/middleware.ts` → `src/proxy.ts` migration** (2026-08-15): renamed per Next.js 16 file convention; `src/lib/supabase/middleware.ts` → `src/lib/supabase/proxy.ts`; build verified
 - Phase 1 verified end-to-end: signup/login, Supabase connected, all four tables live
 - Next.js 16 + TypeScript + TailwindCSS scaffold at repo root
 - Supabase Auth: `/login` (sign in / sign up / forgot password), `/auth/callback` (handles `type=recovery` redirect), `/reset-password` set-new-password page, middleware session guard
@@ -111,7 +118,6 @@ Last updated: 2026-08-07 — by: Trae
   - As a result, hosted RLS behavior and Supabase Security Scanner clearance were not directly verified in this session.
 
 ## Known gaps (deferred, not blocking)
-- **Next.js 16 warning** — the build warns that the `middleware` file convention is deprecated in favor of `proxy`; current build still succeeds.
 - **Node runtime warning** — the build warns that future `@supabase/supabase-js` releases will require Node.js 22+; current build still succeeds on Node.js 20.
 
 ## What broke last session and why (so the next agent doesn't repeat it)
@@ -123,6 +129,7 @@ Last updated: 2026-08-07 — by: Trae
   - no PAT / database password available for Management API SQL execution
 
 ## Next concrete step
-- Apply `supabase/migrations/002_enable_rls.sql` in the hosted Supabase project, then verify:
-  - app still works under the signed-in owner account
+- Apply `supabase/migrations/002_enable_rls.sql` and `supabase/migrations/005_invite_only.sql` in the hosted Supabase project (Supabase SQL Editor), then verify:
+  - Existing account can still log in
+  - A non-listed email is blocked with the invite-only message
   - Security Scanner no longer flags `ideas`, `leads`, `conversations`, and `insights`

@@ -11,11 +11,6 @@ import { formatUtcDayMonthYear, formatUtcDayMonthYearTime } from "@/lib/date-for
 import {
   ArrowLeft,
   ExternalLink,
-  Trash2,
-  FileText,
-  MessageSquare,
-  Sparkles,
-  Lightbulb,
   Calendar,
   Building,
   Briefcase,
@@ -268,11 +263,7 @@ export function LeadDetailView({
               disabled={isDeleting}
               className="inline-flex items-center gap-1.5 rounded-sm border border-destructive/50 bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive/20 transition-colors disabled:opacity-50"
             >
-              {isDeleting ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <Trash2 className="size-3.5" />
-              )}
+              {isDeleting && <Loader2 className="size-3.5 animate-spin" />}
               Delete
             </button>
           </div>
@@ -322,37 +313,34 @@ export function LeadDetailView({
           <nav className="flex space-x-6">
             <button
               onClick={() => setActiveTab("profile")}
-              className={`flex items-center gap-2 border-b-2 py-3 text-xs font-semibold transition-colors cursor-pointer ${
+              className={`border-b-2 py-3 text-xs font-semibold transition-colors cursor-pointer ${
                 activeTab === "profile"
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              <FileText className="h-4 w-4" />
               Profile
             </button>
 
             <button
               onClick={() => setActiveTab("conversations")}
-              className={`flex items-center gap-2 border-b-2 py-3 text-xs font-semibold transition-colors cursor-pointer ${
+              className={`border-b-2 py-3 text-xs font-semibold transition-colors cursor-pointer ${
                 activeTab === "conversations"
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              <MessageSquare className="h-4 w-4" />
               Outreach & Messages ({conversationItems.length})
             </button>
 
             <button
               onClick={() => setActiveTab("insights")}
-              className={`flex items-center gap-2 border-b-2 py-3 text-xs font-semibold transition-colors cursor-pointer ${
+              className={`border-b-2 py-3 text-xs font-semibold transition-colors cursor-pointer ${
                 activeTab === "insights"
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Sparkles className="h-4 w-4" />
               Reply Insights ({insightItems.length})
             </button>
           </nav>
@@ -455,10 +443,7 @@ export function LeadDetailView({
                   ) : hasOutgoingMessage ? (
                     "First Message Already Generated"
                   ) : (
-                    <>
-                      <Sparkles className="size-3.5" />
-                      Generate First Message
-                    </>
+                    "Generate First Message"
                   )}
                 </button>
                 <button
@@ -544,9 +529,6 @@ export function LeadDetailView({
 
             {conversationItems.length === 0 ? (
               <div className="rounded-md border border-dashed border-border bg-card p-8 text-center">
-                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary mb-3">
-                  <MessageSquare className="h-5 w-5" />
-                </div>
                 <h3 className="text-sm font-semibold text-foreground">No Messages Yet</h3>
                 <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
                   Generate your first outreach message above. Messages are saved to history after generation.
@@ -584,9 +566,6 @@ export function LeadDetailView({
           <div className="space-y-4 mt-6">
             {insightItems.length === 0 ? (
               <div className="rounded-md border border-dashed border-border bg-card p-8 text-center">
-                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary mb-3">
-                  <Sparkles className="h-5 w-5" />
-                </div>
                 <h3 className="text-sm font-semibold text-foreground">Insight History is Empty</h3>
                 <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
                   Capture a pasted reply to generate and store the first insight.

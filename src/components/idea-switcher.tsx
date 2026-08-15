@@ -3,7 +3,7 @@
 import { useState, useTransition, useRef, useEffect } from "react";
 import type { Idea } from "@/types/idea";
 import { selectIdea } from "@/app/actions/ideas";
-import { Lightbulb, ChevronDown, Plus, Check, FolderCog } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 
 interface IdeaSwitcherProps {
   ideas: Idea[];
@@ -53,9 +53,6 @@ export function IdeaSwitcher({
         className="flex items-center gap-2.5 rounded-lg border border-zinc-200 bg-zinc-50 px-3.5 py-2 text-sm font-medium text-zinc-900 shadow-xs hover:bg-zinc-100 hover:border-zinc-300 transition-all cursor-pointer disabled:opacity-50"
         aria-expanded={isOpen}
       >
-        <div className="flex h-5 w-5 items-center justify-center rounded-md bg-amber-500/10 text-amber-600">
-          <Lightbulb className="h-3.5 w-3.5" />
-        </div>
         <div className="flex flex-col items-start text-left">
           <span className="text-[10px] uppercase tracking-wider font-semibold text-zinc-400 leading-none">
             Active Idea
@@ -112,7 +109,6 @@ export function IdeaSwitcher({
               }}
               className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer"
             >
-              <Plus className="h-3.5 w-3.5" />
               Create New Idea
             </button>
             {ideas.length > 0 && (
@@ -123,7 +119,6 @@ export function IdeaSwitcher({
                 }}
                 className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 transition-colors cursor-pointer"
               >
-                <FolderCog className="h-3.5 w-3.5" />
                 Manage All Ideas
               </button>
             )}

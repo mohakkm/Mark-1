@@ -66,6 +66,18 @@ RULE FOR EVERY AI AGENT / SESSION (Cursor, Antigravity, VSCode/Copilot, whoever)
 
 ---
 
+## Invite-Only Access Gating
+- [x] `supabase/migrations/005_invite_only.sql` — creates `public.allowed_emails` (email PK, added_at, note); backfills all existing `auth.users` on apply so no current user is locked out
+- [x] `src/lib/invite-check.ts` — server-only helper; queries `allowed_emails` via service-role admin client (bypasses RLS); never exposed to the browser
+- [x] `src/app/actions/invite.ts` — `checkInviteAction` Server Action; called by the signup form before `supabase.auth.signUp()`
+- [x] Email/password signup: invite checked **before** account creation; shows "Verdict is currently invite-only. Request access and we'll add you."
+- [x] Google OAuth (and any future OAuth provider): invite checked in `/auth/callback` **after** `exchangeCodeForSession`; uninvited users are signed out + deleted via `admin.auth.admin.deleteUser()`; redirected to `/login?error=not_invited`
+- [x] `not_invited` error query param mapped to the invite message on the login page
+- [x] Admin workflow: `INSERT INTO public.allowed_emails (email, note) VALUES ('...', '...')` via Supabase Table Editor
+
+---
+
+
 ## Phase 7 — Follow-up Queue
 - [ ] Leads sorted by last_contact, highlight 3/5/7+ day overdue
 - [ ] Nothing automated — just a sorted reminder list
